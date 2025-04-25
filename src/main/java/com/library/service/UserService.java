@@ -2,6 +2,7 @@ package com.library.service;
 
 
 import com.library.dto.UserDTO;
+import com.library.entity.enums.ERole;
 import com.library.mappers.UserMapper;
 import com.library.entity.User;
 import com.library.repository.UserRepository;
@@ -22,13 +23,13 @@ public class UserService {
 
 
     public UserDTO addUser(@RequestBody UserDTO userDTO){
-        System.out.println("name: " + userDTO.name());
         User user = userMapper.toEntity(userDTO);
-        System.out.println("name: " + user.getName());
+        if (user.getRole() == null) {
+            user.setRole(ERole.USER);
+        }
         User savedUser = userRepository.save(user);
         UserDTO savedUserDTO = userMapper.toDTO(savedUser);
         return savedUserDTO;
-        /* TODO addrole for users (default role: USER, admin role: ADMIN) */
     }
 
     public UserDTO getUserByName(String name) {
