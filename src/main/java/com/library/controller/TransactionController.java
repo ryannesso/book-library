@@ -13,9 +13,11 @@ public class TransactionController {
     @Autowired
     private TransactionService transactionService;
 
-    @PostMapping("/create_transaction")
-    public Transaction createTransaction(@RequestBody Transaction transaction) {
-        return transactionService.addTransaction(transaction);
-    }
+//    @PostMapping("/transaction")
+//    public Transaction createTransaction(@RequestBody Transaction transaction) {
+//        return transactionService.addTransaction(transaction);
+//    }
+
+
 
 }

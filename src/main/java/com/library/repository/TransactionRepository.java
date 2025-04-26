@@ -8,4 +8,5 @@ import java.util.Optional;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
     public Optional<Transaction> findByUserIdAndBookId(Long userId, Long bookId);
+    public Optional<Transaction> findById(Long Id);
 }

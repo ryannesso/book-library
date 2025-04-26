@@ -4,7 +4,7 @@ import com.library.entity.enums.ActionType;
 import jakarta.persistence.*;
 import lombok.Data;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -13,18 +13,16 @@ public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private LocalDate borrowDate;
-    private LocalDate returnDate;
+    private LocalDateTime BorrowDate;
+    private LocalDateTime ReturnDate;
+
+    @Enumerated(EnumType.STRING)
     private ActionType actionType;
 
-    @ManyToOne
-    @JoinColumn(name = "book_id", referencedColumnName = "id")
-    private Book book;
+    private Long userId;
+    private Long bookId;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
-    private User user;
-
+    private boolean isActive;
 
 
 }
