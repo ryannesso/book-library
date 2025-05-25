@@ -1,4 +1,4 @@
-package com.library.dto.request;
+package com.library.dto.request.transactionalRequest;
 
 public record BorrowRequest(
         Long Id,

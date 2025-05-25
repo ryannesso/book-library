@@ -8,8 +8,11 @@ import com.library.entity.User;
 import com.library.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
+
+import java.util.List;
 
 @Service
 @AllArgsConstructor
@@ -20,23 +23,39 @@ public class UserService {
     @Autowired
     private UserMapper userMapper;
 
+    private PasswordEncoder passwordEncoder;
 
 
-    public UserDTO addUser(@RequestBody UserDTO userDTO){
+    //todo rename to register or registerUser
+    public UserDTO addUser(UserDTO userDTO){
         User user = userMapper.toEntity(userDTO);
         if (user.getRole() == null) {
             user.setRole(ERole.USER);
         }
+        if(userRepository.findByEmail(user.getEmail()).isPresent()){
+            throw new IllegalArgumentException("Email already exists");
+        }
+        String encodedPassword = passwordEncoder.encode(userDTO.password());
+        user.setPassword(encodedPassword);
         User savedUser = userRepository.save(user);
         UserDTO savedUserDTO = userMapper.toDTO(savedUser);
         return savedUserDTO;
     }
 
-    public UserDTO getUserByName(String name) {
-        if(userRepository.findByName(name).isPresent()){
-            return userMapper.toDTO(userRepository.findByName(name).get());
+    public List<UserDTO> getUserByName(String name) {
+        List<User> userList = userRepository.findByName(name);
+        if(userList.isEmpty()){
+            throw new IllegalArgumentException("User not found");
         }
-        return null;
+        return userMapper.toDTO(userList);
+    }
+
+    public User getUserEntityByName(String name) {
+        List<User> userList = userRepository.findByName(name);
+        if(userList.isEmpty()){
+            throw new IllegalArgumentException("User not found");
+        }
+        return userList.get(0);
     }
 
     public User getUserById(Long id) {

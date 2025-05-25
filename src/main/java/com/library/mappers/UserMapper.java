@@ -1,6 +1,7 @@
 package com.library.mappers;
 
 import com.library.dto.UserDTO;
+import com.library.dto.request.userRequest.RegisterRequest;
 import com.library.entity.User;
 import com.library.entity.enums.ERole;
 import org.mapstruct.Mapper;
@@ -10,6 +11,7 @@ import org.mapstruct.factory.Mappers;
 import java.util.List;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
+    UserDTO registerRequestToUserDTO(RegisterRequest registerRequest);
     UserDTO toDTO(User user);
     @Mapping(target = "role", expression = "java(stringToRole(userDTO.role()))")
     User toEntity(UserDTO userDTO);

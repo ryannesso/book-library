@@ -1,8 +1,7 @@
 package com.library.controller;
 
 import com.library.dto.BookDTO;
-import com.library.dto.request.BorrowRequest;
-import com.library.dto.request.ReturnRequest;
+import com.library.dto.request.transactionalRequest.BorrowRequest;
 import com.library.entity.Transaction;
 import com.library.mappers.BookMapper;
 import com.library.entity.Book;
@@ -10,16 +9,13 @@ import com.library.repository.BookRepository;
 import com.library.repository.TransactionRepository;
 import com.library.service.BookService;
 import com.library.service.TransactionService;
-import jakarta.persistence.Id;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
-@RestController
+@RestController()
+@RequestMapping("/api/books")
 public class BookController {
 
     @Autowired
@@ -33,13 +29,17 @@ public class BookController {
     @Autowired
     private TransactionRepository transactionRepository;
 
-    @PostMapping("/addbook")
+    @PostMapping("/create_book")
     public BookDTO createBook(@RequestBody BookDTO bookDTO) {
+        System.out.println("createBook() called with: " + bookDTO);
         Book book = bookMapper.toEntity(bookDTO);
+        if(book.getAvailableCopies() < 0){
+            throw new IllegalArgumentException("Available books cannot be negative");
+        }
         return bookService.addBook(bookDTO);
     }
 
-    @PostMapping("/borrow")
+    @PostMapping("/borrow_book")
     public BookDTO borrowBook(@RequestBody BorrowRequest request) {
         Long userId = request.userId();
         Long bookId = request.bookId();
@@ -48,7 +48,7 @@ public class BookController {
         return null;
     }
 
-    @PutMapping("/return")
+    @PutMapping("/return_book")
     public BookDTO returnBook(@RequestBody BorrowRequest request) {
         Optional<Transaction> optionalTransaction = transactionRepository.findById(request.Id());
         Transaction transaction = optionalTransaction.get();

@@ -7,7 +7,8 @@ public record BookDTO(
         String title,
         String author,
         boolean status,
-        String description
+        String description,
+        int availableCopies
 ) {
 
 }

@@ -10,11 +10,13 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class BookService {
 
     @Autowired
@@ -38,6 +40,12 @@ public class BookService {
     public BookDTO borrowBook(Long userId, Long bookId) {
         Optional<Book> bookOptional = bookRepository.findById(bookId);
         Book book = bookOptional.get();
+        if (book.getAvailableCopies() <= 0) {
+            throw new IllegalStateException("No copies of the book are currently available");
+        }
+
+        book.setAvailableCopies(book.getAvailableCopies() - 1);
+        bookRepository.save(book);
         transactionService.addTransaction(userId, bookId, ActionType.BORROW);
         return null;
     }
@@ -52,6 +60,8 @@ public class BookService {
 
 
         transactionService.updateTransaction(borrowId);
+        book.setAvailableCopies(book.getAvailableCopies() + 1);
+        bookRepository.save(book);
         return null;
     }
 
