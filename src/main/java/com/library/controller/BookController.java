@@ -10,56 +10,54 @@ import com.library.repository.TransactionRepository;
 import com.library.service.BookService;
 import com.library.service.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
-@RestController()
+@RestController
 @RequestMapping("/api/books")
 public class BookController {
 
-    @Autowired
-    private BookService bookService;
-    @Autowired
-    private BookRepository bookRepository;
-    @Autowired
-    private BookMapper bookMapper;
-    @Autowired
-    private TransactionService transactionService;
-    @Autowired
-    private TransactionRepository transactionRepository;
+    @Autowired private BookService bookService;
+    @Autowired private TransactionRepository transactionRepository;
 
-    @PostMapping("/create_book")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("")
     public BookDTO createBook(@RequestBody BookDTO bookDTO) {
-        System.out.println("createBook() called with: " + bookDTO);
-        Book book = bookMapper.toEntity(bookDTO);
-        if(book.getAvailableCopies() < 0){
+        if (bookDTO.availableCopies() < 0) {
             throw new IllegalArgumentException("Available books cannot be negative");
         }
         return bookService.addBook(bookDTO);
     }
 
-    @PostMapping("/borrow_book")
-    public BookDTO borrowBook(@RequestBody BorrowRequest request) {
-        Long userId = request.userId();
-        Long bookId = request.bookId();
-        System.out.println(userId);
-        bookService.borrowBook(userId, bookId);
-        return null;
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public void deleteBook(@PathVariable Long id) {
+        bookService.deleteBookById(id);
     }
 
-    @PutMapping("/return_book")
-    public BookDTO returnBook(@RequestBody BorrowRequest request) {
-        Optional<Transaction> optionalTransaction = transactionRepository.findById(request.Id());
-        Transaction transaction = optionalTransaction.get();
-        Long borrowId = transaction.getId();
-        System.out.println(borrowId);
-        transactionRepository.findById(borrowId).orElseThrow(() -> new RuntimeException("Transaction not found"));
-        bookService.returnBook(borrowId);
-        return null;
+    @PostMapping("/borrow")
+    public void borrowBook(@RequestBody BorrowRequest request) {
+        bookService.borrowBook(request.userId(), request.bookId());
     }
 
-    /* TODO create borrow and return methods */
+    @PutMapping("/return")
+    public void returnBook(@RequestBody BorrowRequest request) {
+        Transaction transaction = transactionRepository.findById(request.Id())
+                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+        bookService.returnBook(transaction.getId());
+    }
 
+    @GetMapping("/{id}")
+    public BookDTO getBookById(@PathVariable Long id) {
+        return bookService.getBookById(id);
+    }
 
+    @GetMapping("/title")
+    public List<BookDTO> getBooksByTitle(@RequestParam String title) {
+        return bookService.getBookByTitle(title);
+    }
 }
+

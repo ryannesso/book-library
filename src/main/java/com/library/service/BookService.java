@@ -1,6 +1,5 @@
 package com.library.service;
 
-//import com.library.BooksDTOMapper;
 import com.library.entity.enums.ActionType;
 import com.library.mappers.BookMapper;
 import com.library.dto.BookDTO;
@@ -8,7 +7,6 @@ import com.library.entity.Book;
 import com.library.repository.BookRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,12 +26,14 @@ public class BookService {
 
 
     public BookDTO addBook(BookDTO bookDTO) {
-        if(bookRepository.findByTitle(bookDTO.title()).isPresent()){
-            throw new RuntimeException("Book already exists");
-        }
-        Book book = bookMapper.MAPPER.toEntity(bookDTO);
+//        if(!bookRepository.findByTitle(bookDTO.title()).isEmpty()){
+//            throw new RuntimeException("Book already exists");
+//        }
+// без проверки на название потому что может быть несколько книг с одинаковым названием
+
+        Book book = BookMapper.MAPPER.toEntity(bookDTO);
         Book savedBook = bookRepository.save(book);
-        BookDTO savedBookDTO = bookMapper.MAPPER.toDTO(savedBook);
+        BookDTO savedBookDTO = BookMapper.MAPPER.toDTO(savedBook);
         return savedBookDTO;
     }
 
@@ -47,7 +47,7 @@ public class BookService {
         book.setAvailableCopies(book.getAvailableCopies() - 1);
         bookRepository.save(book);
         transactionService.addTransaction(userId, bookId, ActionType.BORROW);
-        return null;
+        return BookMapper.MAPPER.toDTO(book);
     }
 
     public BookDTO returnBook(Long borrowId) {
@@ -62,14 +62,20 @@ public class BookService {
         transactionService.updateTransaction(borrowId);
         book.setAvailableCopies(book.getAvailableCopies() + 1);
         bookRepository.save(book);
-        return null;
+        return BookMapper.MAPPER.toDTO(book);
     }
 
 
-    public List<BookDTO> findBookById(Long bookId) {
-        return bookRepository.findBookById(bookId);
+    public BookDTO getBookById(Long id) {
+        return bookRepository.getBookById(id);
     }
 
-    /* TODO create borrow and return methods */
+    public List<BookDTO> getBookByTitle(String title) {
+        List<Book> books = bookRepository.getByTitle(title);
+        return BookMapper.MAPPER.toDtoList(books);
+    }
 
+    public void deleteBookById(Long Id) {
+        bookRepository.deleteById(Id);
+    }
 }

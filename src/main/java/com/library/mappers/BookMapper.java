@@ -15,4 +15,5 @@ public interface BookMapper {
     Book toEntity(BookDTO bookDTO);
     List<BookDTO> toDTO(List<Book> bookList);
     List<Book> toEntity(List<BookDTO> bookDTOList);
+    List<BookDTO> toDtoList(List<Book> books);
 }

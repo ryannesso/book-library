@@ -5,9 +5,8 @@ import com.library.entity.Book;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface BookRepository extends JpaRepository<Book, Long> {
-    public Optional<Book> findByTitle(String title);
-    public List<BookDTO> findBookById(Long bookId);
+    public List<Book> getByTitle(String title);
+    public BookDTO getBookById(Long id);
 }
