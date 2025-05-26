@@ -31,8 +31,9 @@ public class SecurityConfiguration {
         http
                 .csrf(csrf -> csrf.disable())  // Disable CSRF if not needed
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()  // Allow unauthenticated access to auth-related endpoints
-                        .anyRequest().authenticated()  // All other requests must be authenticated
+                        .requestMatchers("/api/auth/**").permitAll()      // публичные эндпоинты для auth
+                        .requestMatchers("/api/books/all").permitAll()     // ещё один публичный эндпоинт
+                        .anyRequest().authenticated()                      // остальные требуют аутентификации
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)  // Stateless session for API authentication

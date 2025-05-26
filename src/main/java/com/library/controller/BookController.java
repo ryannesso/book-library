@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/books")
 public class BookController {
@@ -24,7 +25,7 @@ public class BookController {
     @Autowired private TransactionRepository transactionRepository;
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("")
+    @PostMapping("/create")
     public BookDTO createBook(@RequestBody BookDTO bookDTO) {
         if (bookDTO.availableCopies() < 0) {
             throw new IllegalArgumentException("Available books cannot be negative");
@@ -58,6 +59,11 @@ public class BookController {
     @GetMapping("/title")
     public List<BookDTO> getBooksByTitle(@RequestParam String title) {
         return bookService.getBookByTitle(title);
+    }
+
+    @GetMapping("/all")
+    public List<BookDTO> getAllBooks() {
+        return bookService.getAllBooks();
     }
 }
 

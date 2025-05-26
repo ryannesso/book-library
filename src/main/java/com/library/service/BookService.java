@@ -78,4 +78,11 @@ public class BookService {
     public void deleteBookById(Long Id) {
         bookRepository.deleteById(Id);
     }
+
+    public List<BookDTO> getAllBooks() {
+        List<Book> books = bookRepository.findAll();
+        return BookMapper.MAPPER.toDTO(books);
+    }
+
+    //todo закладки
 }
