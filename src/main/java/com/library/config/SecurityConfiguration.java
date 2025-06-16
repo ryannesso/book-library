@@ -3,6 +3,7 @@ package com.library.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -29,17 +30,29 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())  // Disable CSRF if not needed
+                .csrf(csrf -> csrf.disable())
+                .cors(Customizer.withDefaults())// Disable CSRF if not needed
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()      // публичные эндпоинты для auth
-                        .requestMatchers("/api/books/all").permitAll()     // ещё один публичный эндпоинт
+                        .requestMatchers("/api/books/all").permitAll()
+                        .requestMatchers("/api/books/title").permitAll() // ещё один публичный эндпоинт
                         .anyRequest().authenticated()                      // остальные требуют аутентификации
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)  // Stateless session for API authentication
                 )
                 .authenticationProvider(authenticationProvider)  // Use the injected authenticationProvider directly
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);  // Add the JWT filter
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                // Добавляем logout конфиг:
+                .logout(logout -> logout
+                        .logoutUrl("/api/auth/logout")   // url для logout
+                        .deleteCookies("jwt")            // удаляем cookie с именем jwt
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            response.setStatus(200);
+                            response.getWriter().write("Logged out successfully");
+                        })
+                        .permitAll()
+                );
 
         return http.build();
     }

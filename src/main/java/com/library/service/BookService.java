@@ -38,6 +38,9 @@ public class BookService {
     }
 
     public BookDTO borrowBook(Long userId, Long bookId) {
+        if( bookId == null && userId == null) {
+            throw new  IllegalArgumentException("id must be not null");
+        }
         Optional<Book> bookOptional = bookRepository.findById(bookId);
         Book book = bookOptional.get();
         if (book.getAvailableCopies() <= 0) {

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @AllArgsConstructor
@@ -48,6 +49,13 @@ public class UserService {
             throw new IllegalArgumentException("User not found");
         }
         return userMapper.toDTO(userList);
+    }
+
+    public User getUserByEmail(String email) {
+        if(userRepository.findByEmail(email).isEmpty()) {
+            throw new IllegalArgumentException("User not found");
+        }
+        return userRepository.findByEmail(email).get();
     }
 
     public User getUserEntityByName(String name) {

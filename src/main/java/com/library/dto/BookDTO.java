@@ -1,9 +1,7 @@
 package com.library.dto;
 
-import lombok.Data;
-
-import java.util.List;
 public record BookDTO(
+        Long id,
         String title,
         String author,
         boolean status,

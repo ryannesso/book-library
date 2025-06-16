@@ -16,10 +16,10 @@ public class ApplicationConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
-        return username -> userRepository.findByName(username)
+        return email -> userRepository.findByEmail(email)
                 .stream()
                 .findFirst()
-                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + username));
+                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + email));
     }
 
 
