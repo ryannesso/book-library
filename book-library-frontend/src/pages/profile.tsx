@@ -31,69 +31,79 @@ export default function ProfilePage() {
 
     useEffect(() => {
         axios.get('http://localhost:8081/api/users/me', { withCredentials: true })
-            .then(res => setUser(res.data))
-            .catch(() => setUserError('Failed to load user data'))
+            .then(res => {
+                setUser(res.data);
+            })
+            .catch(() => {
+                setUserError('Failed to load user data. Please log in again.');
+                router.push('/login_page'); // Redirect to login if user data fails to load
+            })
             .finally(() => setLoadingUser(false));
     }, []);
 
     useEffect(() => {
+        // Only fetch books if user is successfully loaded and not in a loading state
+        if (!user && !loadingUser) {
+            return;
+        }
+
         axios.get('http://localhost:8081/api/users/my_books', { withCredentials: true })
             .then(res => setBooks(res.data))
             .catch(() => setBooksError('Failed to load your books'))
             .finally(() => setLoadingBooks(false));
-    }, []);
+    }, [user, loadingUser]); // Depend on user and loadingUser state
 
     const handleReturn = async (bookId: number) => {
         setReturningBookId(bookId);
         try {
             await axios.put('http://localhost:8081/api/books/return', { bookId }, { withCredentials: true });
             setBooks(prevBooks => prevBooks.filter(book => book.id !== bookId));
+            alert('Book successfully returned!');
         } catch (err) {
             console.error('Return failed', err);
-            alert('Failed to return the book');
+            alert('Failed to return the book. Please try again.');
         } finally {
             setReturningBookId(null);
         }
     };
 
-    if (loadingUser) return <div className="p-6 text-center">Loading user data...</div>;
-    if (userError) return <div className="p-6 text-center text-red-600">{userError}</div>;
+    if (loadingUser) return <div className="min-h-screen flex items-center justify-center bg-background-primary text-text-light text-xl">Loading user data...</div>;
+    if (userError) return <div className="min-h-screen flex items-center justify-center bg-background-primary text-accent-danger text-xl">{userError}</div>;
 
     return (
-        <div className="min-h-screen bg-gray-100 p-8">
-            <div className="max-w-3xl mx-auto">
-                <section className="bg-white p-6 rounded shadow mb-8 text-center">
-                    <h1 className="text-2xl font-bold mb-2">Profile</h1>
-                    <p className="text-lg">Hello, <strong>{user?.name}</strong>!</p>
-                    <p className="text-gray-600">{user?.email}</p>
+        <div className="min-h-screen bg-background-primary p-8">
+            <div className="max-w-4xl mx-auto">
+                <section className="card-base p-10 mb-10 text-center">
+                    <h1 className="text-4xl font-extrabold mb-4 text-text-light">Your Profile</h1>
+                    <p className="text-xl text-text-light mb-1">Hello, <strong className="text-accent-primary">{user?.name}</strong>!</p>
+                    <p className="text-text-muted text-lg">{user?.email}</p>
                     <button
                         onClick={() => router.push('/page')}
-                        className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                        className="mt-8 px-8 py-3 btn-primary text-lg"
                     >
                         Go to Main Page
                     </button>
                 </section>
 
-                <section className="bg-white p-6 rounded shadow">
-                    <h2 className="text-xl font-semibold mb-4">Your Borrowed Books</h2>
+                <section className="card-base p-10">
+                    <h2 className="text-3xl font-bold mb-8 text-text-light text-center">Your Borrowed Books</h2>
 
-                    {loadingBooks && <p>Loading books...</p>}
-                    {booksError && <p className="text-red-600">{booksError}</p>}
-                    {!loadingBooks && books.length === 0 && <p>You have no borrowed books.</p>}
+                    {loadingBooks && <p className="text-text-muted text-center text-lg">Loading your books...</p>}
+                    {booksError && <p className="text-accent-danger text-center text-lg">{booksError}</p>}
+                    {!loadingBooks && books.length === 0 && <p className="text-text-muted text-center text-lg">You currently have no borrowed books.</p>}
 
-                    <ul className="space-y-4">
+                    <ul className="space-y-6">
                         {books.map(book => (
-                            <li key={book.id} className="border rounded p-4 shadow-sm">
-                                <h3 className="text-lg font-bold">{book.title}</h3>
-                                <p className="text-sm text-gray-700">Author: {book.author}</p>
-                                <p className="text-sm text-gray-500 mt-1">{book.description}</p>
-                                <p className="text-sm mt-2">
-                                    Copies available: {book.availableCopies}
-                                </p>
+                            <li key={book.id} className="card-base p-6 transition-all duration-300 hover:shadow-xl hover:border-accent-primary transform hover:-translate-y-0.5 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                                <div className="flex-grow mb-4 sm:mb-0">
+                                    <h3 className="text-2xl font-bold text-text-light">{book.title}</h3>
+                                    <p className="text-base text-text-muted mt-1">Author: {book.author}</p>
+                                    <p className="text-sm text-text-muted mt-2 max-w-lg line-clamp-2">{book.description}</p>
+                                </div>
                                 <button
                                     onClick={() => handleReturn(book.id)}
                                     disabled={returningBookId === book.id}
-                                    className="mt-3 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                                    className="btn-danger px-6 py-2.5 font-medium text-base sm:ml-6"
                                 >
                                     {returningBookId === book.id ? "Returning..." : "Return"}
                                 </button>

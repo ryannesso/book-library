@@ -7,65 +7,82 @@ export default function SignPage() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [result, setResult] = useState('');
+    const [result, setResult] = useState<string | null>(null);
+    const [isSuccess, setIsSuccess] = useState(false);
 
     const handleRegister = async () => {
+        setResult(null); // Clear previous results
+        setIsSuccess(false);
         try {
             const res = await axios.post(`http://localhost:8081/api/auth/register`, {
                 name,
                 email,
                 password,
             });
-            setResult('User registered successfully!');
-        } catch (error) {
-            setResult('Registration failed');
+            setResult('User registered successfully! You can now log in.');
+            setIsSuccess(true);
+            setName('');
+            setEmail('');
+            setPassword('');
+        } catch (error: any) {
+            if (error.response && error.response.status === 409) {
+                setResult('Registration failed: Email already exists.');
+            } else {
+                setResult('Registration failed. Please try again.');
+            }
+            setIsSuccess(false);
+            console.error("Registration error:", error);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="bg-white shadow-md rounded px-8 py-6 w-full max-w-md">
-                <h2 className="text-2xl font-bold mb-6 text-center">Sign Up</h2>
+        <div className="min-h-screen flex items-center justify-center bg-background-primary p-6">
+            <div className="card-base p-10 w-full max-w-md">
+                <h2 className="text-4xl font-extrabold mb-8 text-center text-text-light">Sign Up</h2>
 
                 <input
                     type="text"
-                    placeholder="Name"
+                    placeholder="Your Name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full mb-4 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    className="w-full mb-6"
                 />
 
                 <input
                     type="email"
-                    placeholder="Email"
+                    placeholder="Your Email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full mb-4 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    className="w-full mb-6"
                 />
 
                 <input
                     type="password"
-                    placeholder="Password"
+                    placeholder="Choose a Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full mb-4 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    className="w-full mb-8"
                 />
 
                 <button
                     onClick={handleRegister}
-                    className="w-full bg-yellow-400 hover:bg-yellow-500 text-white font-semibold py-2 px-4 rounded mb-3 transition"
+                    className="w-full btn-success py-3.5 mb-4"
                 >
                     Sign Up
                 </button>
 
                 <button
                     onClick={() => router.push('/page')}
-                    className="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded transition"
+                    className="w-full btn-secondary py-3.5"
                 >
                     Back to Home
                 </button>
 
-                {result && <p className="mt-4 text-center text-sm text-red-500">{result}</p>}
+                {result && (
+                    <p className={`mt-6 text-center text-lg font-medium ${isSuccess ? 'text-accent-success' : 'text-accent-danger'}`}>
+                        {result}
+                    </p>
+                )}
             </div>
         </div>
     );

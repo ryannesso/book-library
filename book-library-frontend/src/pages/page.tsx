@@ -102,7 +102,8 @@ export default function Page() {
                 { withCredentials: true }
             );
             setIsAuthenticated(false);
-            setBooks([]);
+            setUserBookIds([]); // Clear user borrowed books on logout
+            setBooks([]); // Clear books (or refetch public ones)
             router.push("/page");
         } catch (error) {
             console.error("Logout error", error);
@@ -110,6 +111,11 @@ export default function Page() {
     };
 
     const handleBorrow = async (bookId: number) => {
+        if (!isAuthenticated) {
+            alert("Please log in to borrow books.");
+            router.push("/login_page");
+            return;
+        }
         try {
             await axios.post(
                 "http://localhost:8081/api/books/borrow",
@@ -118,27 +124,44 @@ export default function Page() {
             );
             alert("Book successfully borrowed!");
             setUserBookIds((prev) => [...prev, bookId]);
-        } catch (err) {
+            // Optimistically update available copies
+            setBooks(prevBooks => prevBooks.map(book =>
+                book.id === bookId ? { ...book, availableCopies: book.availableCopies - 1 } : book
+            ));
+        } catch (err: any) {
+            if (err.response && err.response.status === 400) {
+                alert(err.response.data || "This book is not available or you have already borrowed it.");
+            } else {
+                alert("Failed to borrow book. Please try again.");
+            }
             console.error("Error borrowing book", err);
         }
     };
 
     return (
-        <div>
+        <div className="bg-background-primary min-h-screen">
             {/* Header */}
-            <div className="w-full h-[75px] bg-gray-800 flex items-center justify-between px-6">
-                <h1 className="text-gray-400 text-[20px]">online library</h1>
+            <div className="w-full h-[80px] bg-background-secondary flex items-center justify-between px-8 shadow-2xl z-10 relative">
+                <h1 className="text-text-light text-3xl font-extrabold tracking-wider">
+                    Online Library
+                </h1>
 
-                <div className="flex items-center gap-4">
-                    <div className="bg-yellow-100 px-4 py-2 text-[22px] rounded cursor-pointer">
-                        logo
-                    </div>
-                    <div className="bg-yellow-100 px-4 py-2 rounded cursor-pointer">
-                        my books
-                    </div>
-                    <div className="bg-yellow-100 px-4 py-2 rounded cursor-pointer">
-                        browse
-                    </div>
+                <div className="flex items-center gap-6">
+                    {/* Navigation Buttons */}
+                    <button
+                        onClick={() => router.push("/page")}
+                        className="text-text-light hover:text-accent-primary px-3 py-2 rounded-md transition-colors text-lg"
+                    >
+                        Browse
+                    </button>
+                    {isAuthenticated && (
+                        <button
+                            onClick={() => router.push("/profile")}
+                            className="text-text-light hover:text-accent-primary px-3 py-2 rounded-md transition-colors text-lg"
+                        >
+                            My Books
+                        </button>
+                    )}
 
                     {/* Search */}
                     <input
@@ -148,45 +171,37 @@ export default function Page() {
                         onKeyDown={(e) => {
                             if (e.key === "Enter") handleSearch();
                         }}
-                        placeholder="Search books..."
-                        className="px-4 py-2 w-64 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                        placeholder="Search by title..."
+                        className="px-4 py-2.5 w-72 bg-background-primary border border-border-color text-text-light focus:ring-accent-primary"
                     />
                     <button
                         onClick={handleSearch}
-                        className="bg-yellow-400 px-4 py-2 rounded text-white font-semibold"
+                        className="btn-primary py-2.5 px-6"
                     >
                         Search
                     </button>
 
                     {/* Auth buttons */}
                     {isAuthenticated ? (
-                        <>
-                            <button
-                                onClick={() => router.push("/profile")}
-                                className="bg-green-200 px-4 py-2 text-[22px] rounded"
-                            >
-                                personal cabinet
-                            </button>
-                            <button
-                                onClick={handleLogout}
-                                className="bg-red-300 px-4 py-2 text-[22px] rounded"
-                            >
-                                logout
-                            </button>
-                        </>
+                        <button
+                            onClick={handleLogout}
+                            className="btn-danger ml-6 py-2.5 px-6"
+                        >
+                            Logout
+                        </button>
                     ) : (
                         <>
                             <button
                                 onClick={() => router.push("/login_page")}
-                                className="bg-yellow-100 px-4 py-2 text-[22px] rounded"
+                                className="btn-primary ml-6 py-2.5 px-6"
                             >
-                                log-in
+                                Log-in
                             </button>
                             <button
                                 onClick={() => router.push("/sign_page")}
-                                className="bg-yellow-100 px-4 py-2 text-[22px] rounded"
+                                className="btn-success py-2.5 px-6"
                             >
-                                sign-in
+                                Sign-in
                             </button>
                         </>
                     )}
@@ -194,44 +209,48 @@ export default function Page() {
             </div>
 
             {/* Book List */}
-            <div className="max-w-4xl mx-auto p-6 mt-8">
-                <h2 className="text-2xl font-bold mb-4">Book list</h2>
+            <div className="max-w-5xl mx-auto p-8 mt-10">
+                <h2 className="text-4xl font-extrabold mb-8 text-text-light text-center">Available Books</h2>
 
-                {loading && <p>Loading...</p>}
-                {error && <p className="text-red-600">{error}</p>}
-                {!loading && !error && books.length === 0 && <p>No books found</p>}
+                {loading && <p className="text-text-muted text-center text-lg">Loading books...</p>}
+                {error && <p className="text-accent-danger text-center text-lg">{error}</p>}
+                {!loading && !error && books.length === 0 && <p className="text-text-muted text-center text-lg">No books found.</p>}
 
-                <div className="max-h-[500px] overflow-y-auto pr-2">
-                    <ul className="space-y-4">
+                <div className="max-h-[70vh] overflow-y-auto pr-4"> {/* Increased height and padding for scrollbar */}
+                    <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {books.map((book) => (
                             <li
                                 key={book.id}
-                                className="border rounded p-4 shadow hover:shadow-lg transition flex justify-between items-center"
+                                className="card-base p-6 transition-all duration-300 hover:shadow-2xl hover:border-accent-primary transform hover:-translate-y-1"
                             >
-                                <div>
-                                    <h3 className="text-lg font-semibold">
-                                        {book.title}{" "}
-                                        <span className="text-gray-500 text-sm">(ID: {book.id})</span>
+                                <div className="flex justify-between items-start mb-3">
+                                    <h3 className="text-2xl font-bold text-text-light leading-tight">
+                                        {book.title}
                                     </h3>
-                                    <p className="text-gray-700">Author: {book.author}</p>
-                                    <p className="text-gray-600 mt-1">
-                                        Copies available:{" "}
-                                        <span className="font-semibold">{book.availableCopies}</span>
-                                    </p>
+                                    <span className="text-text-muted text-sm px-2 py-1 rounded-full bg-background-primary border border-border-color">ID: {book.id}</span>
                                 </div>
+                                <p className="text-text-muted mt-2 text-base">Author: {book.author}</p>
+                                <p className="text-text-muted mt-2 text-sm line-clamp-2">{book.description}</p>
+                                <p className="text-text-light mt-3 text-base">
+                                    Copies available:{" "}
+                                    <span className="font-semibold">{book.availableCopies}</span>
+                                </p>
 
-                                {userBookIds.includes(book.id) ? (
-                                    <span className="text-green-600 font-semibold">
-                                        Already borrowed
-                                    </span>
-                                ) : (
-                                    <button
-                                        onClick={() => handleBorrow(book.id)}
-                                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-                                    >
-                                        Borrow
-                                    </button>
-                                )}
+                                <div className="mt-5 text-right">
+                                    {userBookIds.includes(book.id) ? (
+                                        <span className="text-accent-success font-semibold text-lg py-2 px-4 bg-background-primary rounded-md border border-accent-success">
+                                            Borrowed
+                                        </span>
+                                    ) : (
+                                        <button
+                                            onClick={() => handleBorrow(book.id)}
+                                            disabled={book.availableCopies === 0}
+                                            className="btn-primary px-5 py-2.5 font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {book.availableCopies === 0 ? "Out of Stock" : "Borrow"}
+                                        </button>
+                                    )}
+                                </div>
                             </li>
                         ))}
                     </ul>

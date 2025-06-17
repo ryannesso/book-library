@@ -29,10 +29,10 @@ export default function LoginPage() {
             setLoginSuccess(true);
             setLoginError(null);
 
-            router.push("/page"); // перенаправление после успешного входа
+            router.push("/page"); // Redirect after successful login
         } catch (error: any) {
             setLoginSuccess(false);
-            setLoginError("Ошибка при входе. Проверьте имя и пароль.");
+            setLoginError("Login failed. Please check your email and password.");
             setShowSearchResult(false);
             setResult(null);
             console.error("Login error:", error);
@@ -44,32 +44,32 @@ export default function LoginPage() {
 
         if (Array.isArray(result)) {
             return result.map((user) => (
-                <div key={user.id} className="bg-gray-100 p-4 rounded shadow mt-4">
-                    <h2 className="text-xl font-semibold">{user.name}</h2>
-                    <p className="text-gray-700">{user.email}</p>
+                <div key={user.id} className="card-base p-6 mt-6">
+                    <h2 className="text-xl font-semibold text-text-light">{user.name}</h2>
+                    <p className="text-text-muted mt-1">{user.email}</p>
                 </div>
             ));
         } else {
             return (
-                <div className="bg-gray-100 p-4 rounded shadow mt-4">
-                    <h2 className="text-xl font-semibold">{result.name}</h2>
-                    <p className="text-gray-700">{result.email}</p>
+                <div className="card-base p-6 mt-6">
+                    <h2 className="text-xl font-semibold text-text-light">{result.name}</h2>
+                    <p className="text-text-muted mt-1">{result.email}</p>
                 </div>
             );
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-200">
-            <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-                <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
+        <div className="min-h-screen flex items-center justify-center bg-background-primary p-6">
+            <div className="card-base p-10 w-full max-w-md">
+                <h1 className="text-4xl font-extrabold mb-8 text-center text-text-light">Login</h1>
 
                 <input
                     type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your name"
-                    className="w-full px-4 py-2 border rounded mb-4 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    placeholder="Enter your email"
+                    className="w-full mb-6"
                 />
 
                 <input
@@ -77,31 +77,31 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="w-full px-4 py-2 border rounded mb-4 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    className="w-full mb-8"
                 />
 
                 <button
                     onClick={handleLogin}
-                    className="w-full bg-yellow-400 hover:bg-yellow-500 text-white font-semibold py-2 rounded mb-2 transition"
+                    className="w-full btn-primary py-3.5 mb-4"
                 >
                     Log In
                 </button>
 
                 <button
                     onClick={() => router.push("/page")}
-                    className="w-full text-blue-600 hover:underline text-sm"
+                    className="w-full text-accent-primary hover:underline text-base py-2"
                 >
                     Back to Home
                 </button>
 
                 {loginSuccess && (
-                    <p className="mt-4 text-green-600 text-center font-semibold">
+                    <p className="mt-6 text-accent-success text-center font-semibold text-lg">
                         Login successful!
                     </p>
                 )}
 
                 {loginError && (
-                    <p className="mt-4 text-red-600 text-center font-semibold">
+                    <p className="mt-6 text-accent-danger text-center font-semibold text-lg">
                         {loginError}
                     </p>
                 )}

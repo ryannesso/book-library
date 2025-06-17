@@ -1,3 +1,148 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom modern dark theme colors and variables */
+:root {
+    --background-primary: #1C1C27; /* Deep almost-black background */
+    --background-secondary: #2A2A38; /* Slightly lighter for cards/sections */
+    --background-tertiary: #3E3E50; /* Even lighter for hover states or specific elements */
+
+    --text-light: #E0E0E0; /* Bright light grey for primary text */
+    --text-muted: #A0A0B0; /* Softer grey for secondary text */
+
+    --accent-primary: #8C8CFF; /* A vibrant, modern purple/blue for main accents */
+    --accent-primary-hover: #A0A0FF;
+    --accent-success: #6EE7B7; /* Soft green for success */
+    --accent-success-hover: #34D399;
+    --accent-danger: #EF4444; /* Bright red for errors/warnings */
+    --accent-danger-hover: #DC2626;
+
+    --border-color: #383845; /* Subtle border for separation */
+    --shadow-color: rgba(0, 0, 0, 0.4); /* Darker shadow */
+
+    --transition-duration: 0.2s;
+    --transition-timing-function: ease-in-out;
+}
+
+body {
+    background-color: var(--background-primary);
+    color: var(--text-light);
+    font-family: 'Inter', sans-serif; /* Still recommending Inter for its modern feel */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.6; /* Improved readability */
+}
+
+/* Base styles for interactive elements */
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    background-color: var(--background-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-light);
+    padding: 0.8rem 1.2rem;
+    border-radius: 0.5rem; /* Slightly more rounded */
+    transition: border-color var(--transition-duration) var(--transition-timing-function),
+    box-shadow var(--transition-duration) var(--transition-timing-function);
+    font-size: 1rem;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(140, 140, 255, 0.3); /* Subtle glow effect on focus */
+}
+
+button {
+    padding: 0.8rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: background-color var(--transition-duration) var(--transition-timing-function),
+    transform var(--transition-duration) var(--transition-timing-function),
+    box-shadow var(--transition-duration) var(--transition-timing-function);
+    cursor: pointer;
+    border: none;
+}
+
+/* General button styles (can be overridden by component-specific classes) */
+.btn-primary {
+    background-color: var(--accent-primary);
+    color: var(--background-primary); /* Dark text on accent button */
+}
+
+.btn-primary:hover {
+    background-color: var(--accent-primary-hover);
+    transform: translateY(-1px); /* Subtle lift effect */
+    box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+.btn-success {
+    background-color: var(--accent-success);
+    color: var(--background-primary);
+}
+
+.btn-success:hover {
+    background-color: var(--accent-success-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+.btn-danger {
+    background-color: var(--accent-danger);
+    color: var(--background-primary);
+}
+
+.btn-danger:hover {
+    background-color: var(--accent-danger-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+.btn-secondary {
+    background-color: var(--background-tertiary);
+    color: var(--text-light);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background-color: var(--background-secondary);
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+/* Card/Panel general styling */
+.card-base {
+    background-color: var(--background-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem; /* More rounded corners for cards */
+    box-shadow: 0 8px 16px var(--shadow-color); /* Enhanced shadow for depth */
+}
+
+/* Scrollbar styles for modern look */
+/* For WebKit browsers (Chrome, Safari) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--background-secondary);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--background-tertiary);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-primary);
+}
+
+/* For Firefox */
+html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--background-tertiary) var(--background-secondary);
+}
