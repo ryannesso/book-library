@@ -3,7 +3,6 @@ package com.library.controller;
 import com.library.config.JwtService;
 import com.library.dto.BookDTO;
 import com.library.dto.UserDTO;
-import com.library.entity.Book;
 import com.library.entity.Transaction;
 import com.library.mappers.UserMapper;
 import com.library.entity.User;
@@ -19,11 +18,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static java.util.Arrays.stream;
 
 @RestController
 @RequestMapping("/api/users")
@@ -33,10 +29,6 @@ public class UserController {
     private UserService userService;
     @Autowired
     private BookService bookService;
-    @Autowired
-    private UserMapper userMapper;
-    @Autowired
-    private UserRepository userRepository;
     @Autowired
     private JwtService jwtService;
     @Autowired
@@ -81,7 +73,7 @@ public class UserController {
 
         // Получаем все транзакции пользователя
         List<Transaction> usersTransactions = transactionService.getAllTransactions().stream()
-                .filter(t -> t.getUserId().equals(userId))
+                .filter(t -> t.getUserId().equals(userId) && t.isActive())
                 .collect(Collectors.toList());
 
         // Получаем список всех книг
@@ -91,13 +83,12 @@ public class UserController {
         Set<Long> userBookIds = usersTransactions.stream()
                 .map(Transaction::getBookId)
                 .collect(Collectors.toSet());
-
         // Фильтруем книги по id
-        List<BookDTO> usersBooks = allBooks.stream()
+        List<BookDTO> userBooks = allBooks.stream()
                 .filter(book -> userBookIds.contains(book.id()))
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(usersBooks);
+        return ResponseEntity.ok(userBooks);
     }
 
 

@@ -1,17 +1,21 @@
 package com.library.service;
 
+import com.library.entity.Transaction;
 import com.library.entity.enums.ActionType;
 import com.library.mappers.BookMapper;
 import com.library.dto.BookDTO;
 import com.library.entity.Book;
 import com.library.repository.BookRepository;
+import com.library.repository.TransactionRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -23,25 +27,33 @@ public class BookService {
     private BookMapper bookMapper;
     @Autowired
     private TransactionService transactionService;
+    @Autowired
+    private TransactionRepository transactionRepository;
 
 
-    public BookDTO addBook(BookDTO bookDTO) {
-//        if(!bookRepository.findByTitle(bookDTO.title()).isEmpty()){
-//            throw new RuntimeException("Book already exists");
-//        }
-// без проверки на название потому что может быть несколько книг с одинаковым названием
-
-        Book book = BookMapper.MAPPER.toEntity(bookDTO);
-        Book savedBook = bookRepository.save(book);
-        BookDTO savedBookDTO = BookMapper.MAPPER.toDTO(savedBook);
-        return savedBookDTO;
+    public List<BookDTO> addBooks(List<BookDTO> bookDTOs) {
+        List<Book> books = bookDTOs.stream()
+                .map(BookMapper.MAPPER::toEntity)
+                .collect(Collectors.toList());
+        List<Book> savedBooks = bookRepository.saveAll(books);
+        return savedBooks.stream()
+                .map(BookMapper.MAPPER::toDTO)
+                .collect(Collectors.toList());
     }
 
     public BookDTO borrowBook(Long userId, Long bookId) {
-        if( bookId == null && userId == null) {
+        if( bookId == null || userId == null) {
             throw new  IllegalArgumentException("id must be not null");
         }
+            Optional<Transaction> transactions = transactionRepository.findByUserIdAndBookIdAndIsActiveTrue(userId, bookId);
+        if(transactions.isPresent()) {
+            throw new IllegalArgumentException("you already have an active transaction for this book");
+        }
+
         Optional<Book> bookOptional = bookRepository.findById(bookId);
+        if(bookOptional.isEmpty()) {
+            throw new IllegalArgumentException("book not found");
+        }
         Book book = bookOptional.get();
         if (book.getAvailableCopies() <= 0) {
             throw new IllegalStateException("No copies of the book are currently available");

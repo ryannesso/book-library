@@ -6,9 +6,6 @@ import com.library.dto.BookDTO;
 import com.library.dto.request.transactionalRequest.BorrowRequest;
 import com.library.dto.request.transactionalRequest.ReturnRequest;
 import com.library.entity.Transaction;
-import com.library.mappers.BookMapper;
-import com.library.entity.Book;
-import com.library.repository.BookRepository;
 import com.library.repository.TransactionRepository;
 import com.library.service.BookService;
 import com.library.service.TransactionService;
@@ -27,16 +24,19 @@ public class BookController {
 
     @Autowired private BookService bookService;
     @Autowired private TransactionRepository transactionRepository;
+    @Autowired private TransactionService transactionService;
     @Autowired private JwtAuthenticationFilter jwtFilter;
     @Autowired private JwtService jwtService;
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/create")
-    public BookDTO createBook(@RequestBody BookDTO bookDTO) {
-        if (bookDTO.availableCopies() < 0) {
-            throw new IllegalArgumentException("Available books cannot be negative");
+    public List<BookDTO> createBook(@RequestBody List<BookDTO> bookDTOs) {
+        for (BookDTO dto : bookDTOs) {
+            if(dto.availableCopies() < 0) {
+                throw new IllegalArgumentException("cannot be negative");
+            }
         }
-        return bookService.addBook(bookDTO);
+        return bookService.addBooks(bookDTOs);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -56,10 +56,14 @@ public class BookController {
     }
 
     @PutMapping("/return")
-    public ResponseEntity<?> returnBook(@RequestBody ReturnRequest request) {
-        Transaction transaction = transactionRepository.findById(request.Id())
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
-        bookService.returnBook(transaction.getId());
+    public ResponseEntity<?> returnBook(@RequestBody ReturnRequest request, HttpServletRequest httpRequest) {
+        String jwt = jwtFilter.extractTokenFromRequest(httpRequest);
+        Long userId = jwtService.extractUserId(jwt);
+        Optional<Transaction> transaction = transactionRepository.findByUserIdAndBookIdAndIsActiveTrue(userId, request.bookId());
+        if (transaction.isEmpty()) {
+            throw new IllegalArgumentException("transaction not found");
+        }
+        bookService.returnBook(transaction.get().getId());
         return ResponseEntity.ok().build();
     }
 

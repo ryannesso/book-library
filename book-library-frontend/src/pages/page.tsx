@@ -20,12 +20,12 @@ type User = {
 export default function Page() {
     const router = useRouter();
     const [books, setBooks] = useState<Book[]>([]);
+    const [userBookIds, setUserBookIds] = useState<number[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [query, setQuery] = useState("");
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-    // Проверка авторизации
     useEffect(() => {
         axios
             .get<User>("http://localhost:8081/api/users/me", {
@@ -41,20 +41,34 @@ export default function Page() {
             .catch(() => setIsAuthenticated(false));
     }, []);
 
-    // Загрузка книг при старте
     useEffect(() => {
         fetchBooks();
     }, []);
+
+    useEffect(() => {
+        if (!isAuthenticated) return;
+
+        axios
+            .get<Book[]>("http://localhost:8081/api/users/my_books", {
+                withCredentials: true,
+            })
+            .then((res) => {
+                const ids = res.data.map((book) => book.id);
+                setUserBookIds(ids);
+            })
+            .catch((err) => {
+                console.error("Error fetching user books:", err);
+            });
+    }, [isAuthenticated]);
 
     const fetchBooks = async () => {
         setLoading(true);
         try {
             const response = await axios.get("http://localhost:8081/api/books/all");
-            console.log("Список книг:", response.data); // отладка
             setBooks(response.data);
             setError(null);
         } catch (e) {
-            setError("Ошибка загрузки книг");
+            setError("Error loading books");
         } finally {
             setLoading(false);
         }
@@ -74,7 +88,7 @@ export default function Page() {
             setBooks(response.data);
             setError(null);
         } catch (e) {
-            setError("Ошибка при поиске");
+            setError("Error during search");
         } finally {
             setLoading(false);
         }
@@ -91,7 +105,7 @@ export default function Page() {
             setBooks([]);
             router.push("/page");
         } catch (error) {
-            console.error("Ошибка при логауте", error);
+            console.error("Logout error", error);
         }
     };
 
@@ -102,17 +116,16 @@ export default function Page() {
                 { bookId },
                 { withCredentials: true }
             );
-            alert("Книга успешно взята!");
+            alert("Book successfully borrowed!");
+            setUserBookIds((prev) => [...prev, bookId]);
         } catch (err) {
-            console.error("Ошибка при взятии книги", err);
-            alert("Не удалось взять книгу");
-            alert(bookId);
+            console.error("Error borrowing book", err);
         }
     };
 
     return (
         <div>
-            {/* ===== Шапка ===== */}
+            {/* Header */}
             <div className="w-full h-[75px] bg-gray-800 flex items-center justify-between px-6">
                 <h1 className="text-gray-400 text-[20px]">online library</h1>
 
@@ -127,7 +140,7 @@ export default function Page() {
                         browse
                     </div>
 
-                    {/* Поиск */}
+                    {/* Search */}
                     <input
                         type="text"
                         value={query}
@@ -145,7 +158,7 @@ export default function Page() {
                         Search
                     </button>
 
-                    {/* Авторизация */}
+                    {/* Auth buttons */}
                     {isAuthenticated ? (
                         <>
                             <button
@@ -180,37 +193,49 @@ export default function Page() {
                 </div>
             </div>
 
-            {/* ===== Контент: Список книг ===== */}
+            {/* Book List */}
             <div className="max-w-4xl mx-auto p-6 mt-8">
                 <h2 className="text-2xl font-bold mb-4">Book list</h2>
 
-                {loading && <p>Загрузка...</p>}
+                {loading && <p>Loading...</p>}
                 {error && <p className="text-red-600">{error}</p>}
-                {!loading && !error && books.length === 0 && <p>Books not found</p>}
+                {!loading && !error && books.length === 0 && <p>No books found</p>}
 
-                <ul className="space-y-4">
-                    {books.map((book) => (
-                        <li
-                            key={book.id}
-                            className="border rounded p-4 shadow hover:shadow-lg transition flex justify-between items-center"
-                        >
-                            <div>
-                                <h3 className="text-lg font-semibold">
-                                    {book.title}{" "}
-                                    <span className="text-gray-500 text-sm">(ID: {book.id})</span>
-                                </h3>
-                                <p className="text-gray-700">Автор: {book.author}</p>
-                            </div>
-
-                            <button
-                                onClick={() => handleBorrow(book.id)}
-                                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                <div className="max-h-[500px] overflow-y-auto pr-2">
+                    <ul className="space-y-4">
+                        {books.map((book) => (
+                            <li
+                                key={book.id}
+                                className="border rounded p-4 shadow hover:shadow-lg transition flex justify-between items-center"
                             >
-                                Borrow
-                            </button>
-                        </li>
-                    ))}
-                </ul>
+                                <div>
+                                    <h3 className="text-lg font-semibold">
+                                        {book.title}{" "}
+                                        <span className="text-gray-500 text-sm">(ID: {book.id})</span>
+                                    </h3>
+                                    <p className="text-gray-700">Author: {book.author}</p>
+                                    <p className="text-gray-600 mt-1">
+                                        Copies available:{" "}
+                                        <span className="font-semibold">{book.availableCopies}</span>
+                                    </p>
+                                </div>
+
+                                {userBookIds.includes(book.id) ? (
+                                    <span className="text-green-600 font-semibold">
+                                        Already borrowed
+                                    </span>
+                                ) : (
+                                    <button
+                                        onClick={() => handleBorrow(book.id)}
+                                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                                    >
+                                        Borrow
+                                    </button>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             </div>
         </div>
     );
