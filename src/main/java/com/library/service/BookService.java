@@ -1,5 +1,6 @@
 package com.library.service;
 
+import com.library.dto.request.transactionalRequest.BookActionEvent;
 import com.library.entity.Transaction;
 import com.library.entity.enums.ActionType;
 import com.library.mappers.BookMapper;
@@ -24,6 +25,8 @@ public class BookService {
     @Autowired
     private BookRepository bookRepository;
     @Autowired
+    private KafkaProducer kafkaProducer;
+    @Autowired
     private BookMapper bookMapper;
     @Autowired
     private TransactionService transactionService;
@@ -41,43 +44,21 @@ public class BookService {
                 .collect(Collectors.toList());
     }
 
-    public BookDTO borrowBook(Long userId, Long bookId) {
+    public void borrowBook(Long userId, Long bookId) {
         if( bookId == null || userId == null) {
             throw new  IllegalArgumentException("id must be not null");
         }
-            Optional<Transaction> transactions = transactionRepository.findByUserIdAndBookIdAndIsActiveTrue(userId, bookId);
-        if(transactions.isPresent()) {
-            throw new IllegalArgumentException("you already have an active transaction for this book");
-        }
-
-        Optional<Book> bookOptional = bookRepository.findById(bookId);
-        if(bookOptional.isEmpty()) {
-            throw new IllegalArgumentException("book not found");
-        }
-        Book book = bookOptional.get();
-        if (book.getAvailableCopies() <= 0) {
-            throw new IllegalStateException("No copies of the book are currently available");
-        }
-
-        book.setAvailableCopies(book.getAvailableCopies() - 1);
-        bookRepository.save(book);
-        transactionService.addTransaction(userId, bookId, ActionType.BORROW);
-        return BookMapper.MAPPER.toDTO(book);
+        BookActionEvent event = new BookActionEvent(userId, bookId, "BORROW");
+        kafkaProducer.sendBookAction(event);
     }
 
-    public BookDTO returnBook(Long borrowId) {
-        var transaction = transactionService.hasActiveTransaction(borrowId)
-                .orElseThrow(() -> new EntityNotFoundException("No active transaction found for ID: " + borrowId));
-
-        // Get the book
-        Book book = bookRepository.findById(transaction.getBookId())
-                .orElseThrow(() -> new EntityNotFoundException("Book not found"));
-
-
-        transactionService.updateTransaction(borrowId);
-        book.setAvailableCopies(book.getAvailableCopies() + 1);
-        bookRepository.save(book);
-        return BookMapper.MAPPER.toDTO(book);
+    public void returnBook(Long borrowId) {
+        Optional<Transaction> OpTransaction = transactionRepository.findById(borrowId);
+        Transaction transaction = OpTransaction.orElseThrow(() -> new EntityNotFoundException("transaction not found"));
+        Long userId = transaction.getUserId();
+        Long bookId = transaction.getBookId();
+        BookActionEvent event = new BookActionEvent(userId, bookId, "RETURN");
+        kafkaProducer.sendBookAction(event);
     }
 
 
