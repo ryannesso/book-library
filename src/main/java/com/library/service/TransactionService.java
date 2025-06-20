@@ -79,6 +79,8 @@ public class TransactionService {
         Transaction transaction = OpTransaction.orElseThrow(() -> new EntityNotFoundException("transaction not found"));
         Long userId = transaction.getUserId();
         Long bookId = transaction.getBookId();
+        int bookPrice = bookService.getPrice(bookId);
+        userService.addCredits(userId, bookPrice);
         BookActionEvent event = new BookActionEvent(userId, bookId, "RETURN");
         kafkaProducer.sendBookAction(event);
     }

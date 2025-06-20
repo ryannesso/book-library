@@ -7,7 +7,6 @@ import com.library.entity.enums.ActionType;
 import com.library.repository.BookRepository;
 import com.library.repository.TransactionRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
@@ -16,9 +15,16 @@ import java.util.Optional;
 @Service
 public class KafkaConsumer {
 
-    @Autowired private BookRepository bookRepository;
-    @Autowired private TransactionService transactionService;
-    @Autowired  private TransactionRepository transactionRepository;
+     private final BookRepository bookRepository;
+     private final TransactionService transactionService;
+     private final TransactionRepository transactionRepository;
+
+    public KafkaConsumer(BookRepository bookRepository, TransactionService transactionService, TransactionRepository transactionRepository) {
+        this.bookRepository = bookRepository;
+        this.transactionService = transactionService;
+        this.transactionRepository = transactionRepository;
+    }
+
     @KafkaListener(topics = "book-actions", groupId = "library-group")
     public void handleBookAction(BookActionEvent event) {
         if ("RETURN".equalsIgnoreCase(event.actionType())) {

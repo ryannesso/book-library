@@ -88,6 +88,13 @@ public class UserService {
         userRepository.save(user);
     }
 
+    public void addCredits(Long userId, int price) {
+        Optional<User> OpUser = userRepository.findById(userId);
+        User user = OpUser.orElseThrow(() -> new EntityNotFoundException("user not found"));
+        user.setCredits(user.getCredits() + price);
+        userRepository.save(user);
+    }
+
 
 
 }

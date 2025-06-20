@@ -6,7 +6,7 @@ type User = {
     id: number;
     name: string;
     email: string;
-    credits: number; // Добавлено поле для отображения баланса
+    credits: number;
 };
 
 type Book = {
@@ -30,25 +30,36 @@ export default function ProfilePage() {
     const [booksError, setBooksError] = useState('');
     const [returningBookId, setReturningBookId] = useState<number | null>(null);
 
+    const fetchUser = async () => {
+        try {
+            const res = await axios.get('http://localhost:8081/api/users/me', { withCredentials: true });
+            setUser(res.data);
+        } catch {
+            setUserError('Failed to load user data. Please log in again.');
+            router.push('/login_page');
+        } finally {
+            setLoadingUser(false);
+        }
+    };
+
+    const fetchBooks = async () => {
+        try {
+            const res = await axios.get('http://localhost:8081/api/users/my_books', { withCredentials: true });
+            setBooks(res.data);
+        } catch {
+            setBooksError('Failed to load your books');
+        } finally {
+            setLoadingBooks(false);
+        }
+    };
+
     useEffect(() => {
-        axios.get('http://localhost:8081/api/users/me', { withCredentials: true })
-            .then(res => {
-                setUser(res.data);
-            })
-            .catch(() => {
-                setUserError('Failed to load user data. Please log in again.');
-                router.push('/login_page');
-            })
-            .finally(() => setLoadingUser(false));
+        fetchUser();
     }, []);
 
     useEffect(() => {
         if (!user && !loadingUser) return;
-
-        axios.get('http://localhost:8081/api/users/my_books', { withCredentials: true })
-            .then(res => setBooks(res.data))
-            .catch(() => setBooksError('Failed to load your books'))
-            .finally(() => setLoadingBooks(false));
+        fetchBooks();
     }, [user, loadingUser]);
 
     const handleReturn = async (bookId: number) => {
@@ -56,6 +67,7 @@ export default function ProfilePage() {
         try {
             await axios.put('http://localhost:8081/api/transaction/return', { bookId }, { withCredentials: true });
             setBooks(prevBooks => prevBooks.filter(book => book.id !== bookId));
+            await fetchUser(); // Refresh balance after return
             alert('Book successfully returned!');
         } catch (err) {
             console.error('Return failed', err);
@@ -76,7 +88,6 @@ export default function ProfilePage() {
     return (
         <div className="min-h-screen bg-background-primary p-8">
             <div className="max-w-4xl mx-auto">
-                {/* Profile section */}
                 <section className="card-base p-10 mb-10 text-center">
                     <h1 className="text-4xl font-extrabold mb-4 text-text-light">Your Profile</h1>
                     <p className="text-xl text-text-light mb-1">
@@ -94,7 +105,6 @@ export default function ProfilePage() {
                     </button>
                 </section>
 
-                {/* Borrowed books section */}
                 <section className="card-base p-10">
                     <h2 className="text-3xl font-bold mb-8 text-text-light text-center">Your Borrowed Books</h2>
 
