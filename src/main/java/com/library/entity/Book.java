@@ -18,4 +18,5 @@ public class Book {
     private String description;
     private boolean status;
     private int availableCopies;
+    private int price;
 }

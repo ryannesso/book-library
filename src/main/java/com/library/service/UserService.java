@@ -6,6 +6,7 @@ import com.library.entity.enums.ERole;
 import com.library.mappers.UserMapper;
 import com.library.entity.User;
 import com.library.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,6 +39,7 @@ public class UserService {
         }
         String encodedPassword = passwordEncoder.encode(userDTO.password());
         user.setPassword(encodedPassword);
+        user.setCredits(1000);
         User savedUser = userRepository.save(user);
         UserDTO savedUserDTO = userMapper.toDTO(savedUser);
         return savedUserDTO;
@@ -71,6 +73,19 @@ public class UserService {
             return userRepository.findById(id).get();
         }
         return null;
+    }
+
+    public int getCredits(Long userId) {
+        Optional<User> OpUser = userRepository.findById(userId);
+        User user = OpUser.orElseThrow(() -> new EntityNotFoundException("user not found"));
+        return user.getCredits();
+    }
+
+    public void subtractCredits(Long userId, int price) {
+        Optional<User> OpUser = userRepository.findById(userId);
+        User user = OpUser.orElseThrow(() -> new EntityNotFoundException("user not found"));
+        user.setCredits(user.getCredits() - price);
+        userRepository.save(user);
     }
 
 

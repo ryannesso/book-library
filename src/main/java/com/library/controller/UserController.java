@@ -92,15 +92,4 @@ public class UserController {
     }
 
 
-
-
-
-
-
-//    @GetMapping("/get-user-rentals")
-//    public UserDTO getUserRentalBooks(@RequestBody UserDTO userDTO) {
-//        if(userRepository.findByName(userDTO.name()).isPresent()){
-//
-//        }
-//    }
 }

@@ -23,10 +23,6 @@ import java.util.Optional;
 public class BookController {
 
     @Autowired private BookService bookService;
-    @Autowired private TransactionRepository transactionRepository;
-    @Autowired private TransactionService transactionService;
-    @Autowired private JwtAuthenticationFilter jwtFilter;
-    @Autowired private JwtService jwtService;
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/create")
@@ -45,27 +41,7 @@ public class BookController {
         bookService.deleteBookById(id);
     }
 
-    @PostMapping("/borrow")
-    public ResponseEntity<?> borrowBook(@RequestBody BorrowRequest request, HttpServletRequest httpRequest) {
-        String jwt = jwtFilter.extractTokenFromRequest(httpRequest);
-        Long userId = jwtService.extractUserId(jwt);
 
-        bookService.borrowBook(userId, request.bookId());
-        return ResponseEntity.ok().build();
-
-    }
-
-    @PutMapping("/return")
-    public ResponseEntity<?> returnBook(@RequestBody ReturnRequest request, HttpServletRequest httpRequest) {
-        String jwt = jwtFilter.extractTokenFromRequest(httpRequest);
-        Long userId = jwtService.extractUserId(jwt);
-        Optional<Transaction> transaction = transactionRepository.findByUserIdAndBookIdAndIsActiveTrue(userId, request.bookId());
-        if (transaction.isEmpty()) {
-            throw new IllegalArgumentException("transaction not found");
-        }
-        bookService.returnBook(transaction.get().getId());
-        return ResponseEntity.ok().build();
-    }
 
     @GetMapping("/{id}")
     public BookDTO getBookById(@PathVariable Long id) {

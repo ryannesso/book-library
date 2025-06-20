@@ -11,5 +11,6 @@ public record UserDTO(
         String name,
         String email,
         String password,
-        String role){
+        String role,
+        int credits ){
 }

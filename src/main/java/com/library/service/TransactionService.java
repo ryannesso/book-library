@@ -1,10 +1,12 @@
 package com.library.service;
 
 
+import com.library.dto.request.transactionalRequest.BookActionEvent;
 import com.library.entity.Transaction;
 import com.library.entity.User;
 import com.library.entity.enums.ActionType;
 import com.library.repository.TransactionRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
@@ -19,10 +21,17 @@ import java.util.Optional;
 @Transactional
 public class TransactionService {
 
-    @Autowired
-    private TransactionRepository transactionRepository;
-    @Autowired
-    private UserService userService;
+    private  final TransactionRepository transactionRepository;
+    private final KafkaProducer kafkaProducer;
+    private final UserService userService;
+    private final BookService bookService;
+
+    public TransactionService(TransactionRepository transactionRepository, KafkaProducer kafkaProducer, UserService userService, BookService bookService) {
+        this.transactionRepository = transactionRepository;
+        this.kafkaProducer = kafkaProducer;
+        this.userService = userService;
+        this.bookService = bookService;
+    }
 
     public Transaction addTransaction(Long userId, Long bookId, ActionType actionType) {
         User user = userService.getUserById(userId);
@@ -49,6 +58,29 @@ public class TransactionService {
         transaction.setReturnDate(LocalDateTime.now());
         transaction.setActionType(ActionType.RETURN);
         transactionRepository.save(transaction);
+    }
+
+    public void borrowBook(Long userId, Long bookId) {
+        if( bookId == null || userId == null) {
+            throw new  IllegalArgumentException("id must be not null");
+        }
+        int userCredits = userService.getCredits(userId);
+        int bookPrice =  bookService.getPrice(bookId);
+        if(userCredits < bookPrice) {
+            throw new IllegalArgumentException("Not enough credits");
+        }
+        userService.subtractCredits(userId, bookPrice);
+        BookActionEvent event = new BookActionEvent(userId, bookId, "BORROW");
+        kafkaProducer.sendBookAction(event);
+    }
+
+    public void returnBook(Long borrowId) {
+        Optional<Transaction> OpTransaction = transactionRepository.findById(borrowId);
+        Transaction transaction = OpTransaction.orElseThrow(() -> new EntityNotFoundException("transaction not found"));
+        Long userId = transaction.getUserId();
+        Long bookId = transaction.getBookId();
+        BookActionEvent event = new BookActionEvent(userId, bookId, "RETURN");
+        kafkaProducer.sendBookAction(event);
     }
 
     public List<Transaction> getAllTransactions() {

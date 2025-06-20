@@ -9,6 +9,7 @@ type Book = {
     description: string;
     status: boolean;
     availableCopies: number;
+    price: number; // добавлено
 };
 
 type User = {
@@ -32,11 +33,8 @@ export default function Page() {
                 withCredentials: true,
             })
             .then((res) => {
-                if (res.data?.id) {
-                    setIsAuthenticated(true);
-                } else {
-                    setIsAuthenticated(false);
-                }
+                if (res.data?.id) setIsAuthenticated(true);
+                else setIsAuthenticated(false);
             })
             .catch(() => setIsAuthenticated(false));
     }, []);
@@ -47,7 +45,6 @@ export default function Page() {
 
     useEffect(() => {
         if (!isAuthenticated) return;
-
         axios
             .get<Book[]>("http://localhost:8081/api/users/my_books", {
                 withCredentials: true,
@@ -102,8 +99,8 @@ export default function Page() {
                 { withCredentials: true }
             );
             setIsAuthenticated(false);
-            setUserBookIds([]); // Clear user borrowed books on logout
-            setBooks([]); // Clear books (or refetch public ones)
+            setUserBookIds([]);
+            setBooks([]);
             router.push("/page");
         } catch (error) {
             console.error("Logout error", error);
@@ -118,16 +115,17 @@ export default function Page() {
         }
         try {
             await axios.post(
-                "http://localhost:8081/api/books/borrow",
+                "http://localhost:8081/api/transaction/borrow",
                 { bookId },
                 { withCredentials: true }
             );
             alert("Book successfully borrowed!");
             setUserBookIds((prev) => [...prev, bookId]);
-            // Optimistically update available copies
-            setBooks(prevBooks => prevBooks.map(book =>
-                book.id === bookId ? { ...book, availableCopies: book.availableCopies - 1 } : book
-            ));
+            setBooks(prevBooks =>
+                prevBooks.map(book =>
+                    book.id === bookId ? { ...book, availableCopies: book.availableCopies - 1 } : book
+                )
+            );
         } catch (err: any) {
             if (err.response && err.response.status === 400) {
                 alert(err.response.data || "This book is not available or you have already borrowed it.");
@@ -147,7 +145,6 @@ export default function Page() {
                 </h1>
 
                 <div className="flex items-center gap-6">
-                    {/* Navigation Buttons */}
                     <button
                         onClick={() => router.push("/page")}
                         className="text-text-light hover:text-accent-primary px-3 py-2 rounded-md transition-colors text-lg"
@@ -163,14 +160,11 @@ export default function Page() {
                         </button>
                     )}
 
-                    {/* Search */}
                     <input
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") handleSearch();
-                        }}
+                        onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                         placeholder="Search by title..."
                         className="px-4 py-2.5 w-72 bg-background-primary border border-border-color text-text-light focus:ring-accent-primary"
                     />
@@ -181,7 +175,6 @@ export default function Page() {
                         Search
                     </button>
 
-                    {/* Auth buttons */}
                     {isAuthenticated ? (
                         <button
                             onClick={handleLogout}
@@ -216,7 +209,7 @@ export default function Page() {
                 {error && <p className="text-accent-danger text-center text-lg">{error}</p>}
                 {!loading && !error && books.length === 0 && <p className="text-text-muted text-center text-lg">No books found.</p>}
 
-                <div className="max-h-[70vh] overflow-y-auto pr-4"> {/* Increased height and padding for scrollbar */}
+                <div className="max-h-[70vh] overflow-y-auto pr-4">
                     <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {books.map((book) => (
                             <li
@@ -230,10 +223,12 @@ export default function Page() {
                                     <span className="text-text-muted text-sm px-2 py-1 rounded-full bg-background-primary border border-border-color">ID: {book.id}</span>
                                 </div>
                                 <p className="text-text-muted mt-2 text-base">Author: {book.author}</p>
-                                <p className="text-text-muted mt-2 text-sm line-clamp-2">{book.description}</p>
-                                <p className="text-text-light mt-3 text-base">
-                                    Copies available:{" "}
-                                    <span className="font-semibold">{book.availableCopies}</span>
+                                <p className="text-text-muted mt-1 text-sm line-clamp-2">{book.description}</p>
+                                <p className="text-text-light mt-2 text-base">
+                                    Price: <span className="font-semibold">${book.price}</span>
+                                </p>
+                                <p className="text-text-light text-base">
+                                    Copies available: <span className="font-semibold">{book.availableCopies}</span>
                                 </p>
 
                                 <div className="mt-5 text-right">

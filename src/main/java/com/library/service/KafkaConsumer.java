@@ -1,11 +1,9 @@
 package com.library.service;
 
 import com.library.dto.request.transactionalRequest.BookActionEvent;
-import com.library.dto.request.transactionalRequest.BorrowRequest;
 import com.library.entity.Book;
 import com.library.entity.Transaction;
 import com.library.entity.enums.ActionType;
-import com.library.mappers.BookMapper;
 import com.library.repository.BookRepository;
 import com.library.repository.TransactionRepository;
 import jakarta.persistence.EntityNotFoundException;
