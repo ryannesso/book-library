@@ -21,8 +21,12 @@ import java.util.stream.Collectors;
 @Transactional
 public class BookService {
 
-    @Autowired
-    private BookRepository bookRepository;
+
+    public BookService(BookRepository bookRepository) {
+        this.bookRepository = bookRepository;
+    }
+
+     private  final BookRepository bookRepository;
 
 
     public List<BookDTO> addBooks(List<BookDTO> bookDTOs) {
