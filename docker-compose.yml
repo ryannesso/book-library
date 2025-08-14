@@ -7,7 +7,7 @@ services:
     environment:
       MYSQL_DATABASE: library_db
       MYSQL_USER: book_user
-      MYSQL_PASSWORD: book_pass
+      MYSQL_PASSWORD: book_pass123!
       MYSQL_ROOT_PASSWORD: root
     ports:
       - "3307:3306"
@@ -41,21 +41,6 @@ services:
     networks:
       - app-network
 
-  app:
-    build: .
-    container_name: spring-app
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/library_db
-      SPRING_DATASOURCE_USERNAME: book_user
-      SPRING_DATASOURCE_PASSWORD: book_pass
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-    depends_on:
-      - db
-      - kafka
-    ports:
-      - "8080:8080"
-    networks:
-      - app-network
 
 networks:
   app-network:

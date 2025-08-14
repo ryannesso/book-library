@@ -70,6 +70,7 @@ public class TransactionService {
             throw new IllegalArgumentException("Not enough credits");
         }
         userService.subtractCredits(userId, bookPrice);
+        userService.addBorrowCount(userId);
         BookActionEvent event = new BookActionEvent(userId, bookId, "BORROW");
         kafkaProducer.sendBookAction(event);
     }
@@ -81,6 +82,7 @@ public class TransactionService {
         Long bookId = transaction.getBookId();
         int bookPrice = bookService.getPrice(bookId);
         userService.addCredits(userId, bookPrice);
+        userService.subtractBorrowCount(userId);
         BookActionEvent event = new BookActionEvent(userId, bookId, "RETURN");
         kafkaProducer.sendBookAction(event);
     }

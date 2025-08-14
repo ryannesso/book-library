@@ -29,14 +29,10 @@ public class BookService {
      private  final BookRepository bookRepository;
 
 
-    public List<BookDTO> addBooks(List<BookDTO> bookDTOs) {
-        List<Book> books = bookDTOs.stream()
-                .map(BookMapper.MAPPER::toEntity)
-                .collect(Collectors.toList());
-        List<Book> savedBooks = bookRepository.saveAll(books);
-        return savedBooks.stream()
-                .map(BookMapper.MAPPER::toDTO)
-                .collect(Collectors.toList());
+    public BookDTO addBooks(BookDTO bookDTO) {
+        Book book = BookMapper.MAPPER.toEntity(bookDTO);
+        book = bookRepository.save(book);
+        return BookMapper.MAPPER.toDTO(book);
     }
 
 //    public void borrowBook(Long userId, Long bookId) {

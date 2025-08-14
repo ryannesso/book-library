@@ -33,6 +33,7 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private ERole role;
     private int credits;
+    private int borrowBooks;
 
 
     @Override

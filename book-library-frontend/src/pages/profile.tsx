@@ -7,6 +7,7 @@ type User = {
     name: string;
     email: string;
     credits: number;
+    role: string;
 };
 
 type Book = {
@@ -29,36 +30,43 @@ export default function ProfilePage() {
     const [userError, setUserError] = useState('');
     const [booksError, setBooksError] = useState('');
     const [returningBookId, setReturningBookId] = useState<number | null>(null);
+    const [mounted, setMounted] = useState(false); // защита от гидратации
 
-    const fetchUser = async () => {
-        try {
-            const res = await axios.get('http://localhost:8081/api/users/me', { withCredentials: true });
-            setUser(res.data);
-        } catch {
-            setUserError('Failed to load user data. Please log in again.');
-            router.push('/login_page');
-        } finally {
-            setLoadingUser(false);
-        }
-    };
-
-    const fetchBooks = async () => {
-        try {
-            const res = await axios.get('http://localhost:8081/api/users/my_books', { withCredentials: true });
-            setBooks(res.data);
-        } catch {
-            setBooksError('Failed to load your books');
-        } finally {
-            setLoadingBooks(false);
-        }
-    };
-
+    // --- Монтирование
     useEffect(() => {
-        fetchUser();
+        setMounted(true);
     }, []);
 
+    // --- Загрузка данных пользователя
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const res = await axios.get('http://localhost:8081/api/users/me', { withCredentials: true });
+                setUser(res.data);
+            } catch {
+                setUserError('Failed to load user data. Please log in again.');
+                router.push('/login_page');
+            } finally {
+                setLoadingUser(false);
+            }
+        };
+        fetchUser();
+    }, [router]);
+
+    // --- Загрузка книг после того, как пользователь загружен
     useEffect(() => {
         if (!user && !loadingUser) return;
+
+        const fetchBooks = async () => {
+            try {
+                const res = await axios.get('http://localhost:8081/api/users/my_books', { withCredentials: true });
+                setBooks(res.data);
+            } catch {
+                setBooksError('Failed to load your books');
+            } finally {
+                setLoadingBooks(false);
+            }
+        };
         fetchBooks();
     }, [user, loadingUser]);
 
@@ -67,7 +75,9 @@ export default function ProfilePage() {
         try {
             await axios.put('http://localhost:8081/api/transaction/return', { bookId }, { withCredentials: true });
             setBooks(prevBooks => prevBooks.filter(book => book.id !== bookId));
-            await fetchUser(); // Refresh balance after return
+            // Обновление баланса после возврата
+            const res = await axios.get('http://localhost:8081/api/users/me', { withCredentials: true });
+            setUser(res.data);
             alert('Book successfully returned!');
         } catch (err) {
             console.error('Return failed', err);
@@ -97,12 +107,23 @@ export default function ProfilePage() {
                     <p className="text-text-muted text-lg mt-2">
                         Balance: <span className="text-accent-success font-semibold">${user?.credits?.toFixed(2)}</span>
                     </p>
-                    <button
-                        onClick={() => router.push('/page')}
-                        className="mt-8 px-8 py-3 btn-primary text-lg"
-                    >
-                        Go to Main Page
-                    </button>
+                    <div className="mt-8 flex justify-center gap-4 flex-wrap">
+                        <button
+                            onClick={() => router.push('/page')}
+                            className="px-8 py-3 btn-primary text-lg"
+                        >
+                            Go to Main Page
+                        </button>
+
+                        {mounted && user?.role === "ADMIN" && (
+                            <button
+                                onClick={() => router.push('/admin_page')}
+                                className="px-8 py-3 btn-accent text-lg"
+                            >
+                                Go to Admin Panel
+                            </button>
+                        )}
+                    </div>
                 </section>
 
                 <section className="card-base p-10">

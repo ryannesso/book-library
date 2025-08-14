@@ -91,5 +91,14 @@ public class UserController {
         return ResponseEntity.ok(userBooks);
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<?> getUsers(@CookieValue(name = "jwt", required = false) String jwt) {
+        if (jwt == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authorized");
+        }
+        List<UserDTO> userDTOs = userService.getAllUsers();
+        return ResponseEntity.ok(userDTOs);
+    }
+
 
 }

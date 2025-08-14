@@ -8,19 +8,17 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class CorsConfig {
 
-
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**") // ко всем эндпоинтам
-                        .allowedOrigins("http://localhost:3000")// любые порты
-                        .allowedMethods("*")
+                registry.addMapping("/**")
+                        .allowedOriginPatterns("http://localhost:*") // любой локальный порт
+                        .allowedMethods("GET","POST","PUT","DELETE")
                         .allowedHeaders("*")
-                        .allowCredentials(true); // для авторизации через cookie или токены
+                        .allowCredentials(true); // важно для cookie
             }
         };
     }
 }
-

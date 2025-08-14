@@ -95,6 +95,25 @@ public class UserService {
         userRepository.save(user);
     }
 
+    public void addBorrowCount(Long userId) {
+        Optional<User> OpUser = userRepository.findById(userId);
+        User user = OpUser.orElseThrow(() -> new EntityNotFoundException("user not found"));
+        user.setBorrowBooks(user.getBorrowBooks() + 1);
+        userRepository.save(user);
+    }
+
+    public void subtractBorrowCount(Long userId) {
+        Optional<User> OpUser = userRepository.findById(userId);
+        User user = OpUser.orElseThrow(() -> new EntityNotFoundException("user not found"));
+        user.setBorrowBooks(user.getBorrowBooks() - 1);
+        userRepository.save(user);
+    }
+
+    public List<UserDTO> getAllUsers() {
+        List<User> userList = userRepository.findAll();
+        return userMapper.toDTO(userList);
+    }
+
 
 
 }
