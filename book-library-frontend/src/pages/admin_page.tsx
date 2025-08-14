@@ -17,7 +17,8 @@ type User = {
     name: string;
     email: string;
     role: string;
-    borrowBooks: number
+    borrowBooks: number;
+    credits: number;
 };
 
 export default function AdminPage() {
@@ -29,16 +30,18 @@ export default function AdminPage() {
     const [stats, setStats] = useState({ totalBooks: 0, totalUsers: 0, borrowed: 0 });
 
     const [modalOpen, setModalOpen] = useState(false);
-    const [editMode, setEditMode] = useState(false);
+    const [editBookMode, setEditBookMode] = useState(false);
     const [currentBook, setCurrentBook] = useState<Partial<Book>>({});
 
     const [userModalOpen, setUserModalOpen] = useState(false);
-    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [editUserMode, setEditUserMode] = useState(false);
+    const [currentUser, setCurrentUser] = useState<Partial<User>>({});
+    const [currentPassword, setCurrentPassword] = useState<string>("");
 
     const [loadingUser, setLoadingUser] = useState(true);
     const [accessDenied, setAccessDenied] = useState(false);
 
-    // --- Проверка авторизации админа
+    // Проверка авторизации админа
     useEffect(() => {
         const fetchCurrentUser = async () => {
             try {
@@ -57,10 +60,9 @@ export default function AdminPage() {
         fetchCurrentUser();
     }, [router]);
 
-    // --- Загрузка данных только если админ
+    // Загрузка данных только если админ
     useEffect(() => {
         if (loadingUser || accessDenied) return;
-
         fetchBooks();
         fetchUsers();
         fetchStats();
@@ -81,20 +83,21 @@ export default function AdminPage() {
         setStats(res.data);
     };
 
+    // --- Book Modals
     const openAddModal = () => {
-        setEditMode(false);
+        setEditBookMode(false);
         setCurrentBook({});
         setModalOpen(true);
     };
 
     const openEditModal = (book: Book) => {
-        setEditMode(true);
+        setEditBookMode(true);
         setCurrentBook(book);
         setModalOpen(true);
     };
 
     const saveBook = async () => {
-        if (editMode) {
+        if (editBookMode) {
             await axios.put(`http://localhost:8081/api/books/${currentBook.id}`, currentBook, { withCredentials: true });
         } else {
             await axios.post("http://localhost:8081/api/books/create", currentBook, { withCredentials: true });
@@ -110,10 +113,34 @@ export default function AdminPage() {
         }
     };
 
-    const openUserModal = (user: User) => {
-        setSelectedUser(user);
+    // --- User Modals
+    const openAddModalUser = () => {
+        setEditUserMode(false);
+        setCurrentUser({});
+        setCurrentPassword("");
         setUserModalOpen(true);
-        console.log(user);
+    };
+
+    const openEditModalUser = (user: User) => {
+        setEditUserMode(true);
+        setCurrentUser(user);
+        setCurrentPassword("");
+        setUserModalOpen(true);
+    };
+
+    const saveUser = async () => {
+        const payload: any = { ...currentUser };
+        if (!editUserMode) {
+            payload.password = currentPassword; // только при создании
+        }
+
+        if (editUserMode) {
+            await axios.put(`http://localhost:8081/api/users/${currentUser.id}`, payload, { withCredentials: true });
+        } else {
+            await axios.post("http://localhost:8081/api/users/create_user", payload, { withCredentials: true });
+        }
+        setUserModalOpen(false);
+        fetchUsers();
     };
 
     if (loadingUser) {
@@ -129,10 +156,7 @@ export default function AdminPage() {
             {/* Header */}
             <div className="w-full h-[80px] bg-background-secondary flex items-center justify-between px-8 shadow-2xl">
                 <h1 className="text-3xl font-extrabold">Admin Panel</h1>
-                <button
-                    onClick={() => router.push("/page")}
-                    className="btn-primary py-2.5 px-6"
-                >
+                <button onClick={() => router.push("/page")} className="btn-primary py-2.5 px-6">
                     Back to Library
                 </button>
             </div>
@@ -171,43 +195,83 @@ export default function AdminPage() {
             {/* Users Tab */}
             {tab === "users" && (
                 <div className="p-6">
-                    <h2 className="text-2xl font-bold mb-4">Users</h2>
+                    <div className="flex justify-between mb-4">
+                        <h2 className="text-2xl font-bold">Manage Users</h2>
+                        <button onClick={openAddModalUser} className="btn-success px-4 py-2">+ Add User</button>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {users.map(user => (
                             <div key={user.id} className="card-base p-6">
                                 <h3 className="text-xl">{user.name}</h3>
                                 <p className="text-text-muted">{user.email}</p>
                                 <p className="text-text-muted">Books borrowed: {user.borrowBooks}</p>
-                                <button onClick={() => openUserModal(user)} className="btn-primary mt-2 px-4 py-2">View Books</button>
+                                <p className="text-text-muted">Credits: {user.credits}</p>
+                                <p className="text-text-muted">Role: {user.role}</p>
+                                <div className="flex gap-2 mt-4">
+                                    <button onClick={() => openEditModalUser(user)} className="btn-primary px-4 py-2">Edit</button>
+                                </div>
                             </div>
                         ))}
                     </div>
                 </div>
             )}
 
-            {/* Stats Tab */}
-            {tab === "stats" && (
-                <div className="p-6 grid grid-cols-3 gap-6">
-                    <div className="card-base p-6 text-center">
-                        <p className="text-xl">Total Books</p>
-                        <p className="text-3xl font-bold">{stats.totalBooks}</p>
-                    </div>
-                    <div className="card-base p-6 text-center">
-                        <p className="text-xl">Total Users</p>
-                        <p className="text-3xl font-bold">{stats.totalUsers}</p>
-                    </div>
-                    <div className="card-base p-6 text-center">
-                        <p className="text-xl">Borrowed Books</p>
-                        <p className="text-3xl font-bold">{stats.borrowed}</p>
+            {/* User Modal */}
+            {userModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <div className="card-base p-6 w-[500px]">
+                        <h2 className="text-2xl mb-4">{editUserMode ? "Edit User" : "Add User"}</h2>
+                        <input
+                            type="text"
+                            placeholder="Name"
+                            value={currentUser.name || ""}
+                            onChange={e => setCurrentUser({ ...currentUser, name: e.target.value })}
+                            className="w-full mb-2 px-3 py-2 bg-background-primary border border-border-color text-text-light"
+                        />
+                        <input
+                            type="email"
+                            placeholder="Email"
+                            value={currentUser.email || ""}
+                            onChange={e => setCurrentUser({ ...currentUser, email: e.target.value })}
+                            className="w-full mb-2 px-3 py-2 bg-background-primary border border-border-color text-text-light"
+                        />
+                        {!editUserMode && (
+                            <input
+                                type="password"
+                                placeholder="Password"
+                                value={currentPassword}
+                                onChange={e => setCurrentPassword(e.target.value)}
+                                className="w-full mb-2 px-3 py-2 bg-background-primary border border-border-color text-text-light"
+                            />
+                        )}
+                        <input
+                            type="number"
+                            placeholder="Credits"
+                            value={currentUser.credits || 0}
+                            onChange={e => setCurrentUser({ ...currentUser, credits: Number(e.target.value) })}
+                            className="w-full mb-2 px-3 py-2 bg-background-primary border border-border-color text-text-light"
+                        />
+                        <select
+                            value={currentUser.role || "USER"}
+                            onChange={e => setCurrentUser({ ...currentUser, role: e.target.value })}
+                            className="w-full mb-4 px-3 py-2 bg-background-primary border border-border-color text-text-light"
+                        >
+                            <option value="USER">USER</option>
+                            <option value="ADMIN">ADMIN</option>
+                        </select>
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setUserModalOpen(false)} className="btn-secondary px-4 py-2">Cancel</button>
+                            <button onClick={saveUser} className="btn-success px-4 py-2">Save</button>
+                        </div>
                     </div>
                 </div>
             )}
 
-            {/* Add/Edit Book Modal */}
+            {/* Book Modal */}
             {modalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                     <div className="card-base p-6 w-[500px]">
-                        <h2 className="text-2xl mb-4">{editMode ? "Edit Book" : "Add Book"}</h2>
+                        <h2 className="text-2xl mb-4">{editBookMode ? "Edit Book" : "Add Book"}</h2>
                         <input
                             type="text"
                             placeholder="Title"
@@ -249,29 +313,6 @@ export default function AdminPage() {
                     </div>
                 </div>
             )}
-
-            {/* User Books Modal */}
-            {/*{userModalOpen && selectedUser && (*/}
-            {/*    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">*/}
-            {/*        <div className="card-base p-6 w-[500px] max-h-[80vh] overflow-y-auto">*/}
-            {/*            <h2 className="text-2xl mb-4">Books borrowed by {selectedUser.name}</h2>*/}
-            {/*            {selectedUser.borrowedBooks && selectedUser.borrowedBooks > 0 ? (*/}
-            {/*                <ul className="space-y-2">*/}
-            {/*                    {selectedUser.borrowedBooks.map(book => (*/}
-            {/*                        <li key={book.id} className="border-b border-border-color pb-2">*/}
-            {/*                            {book.title} — {book.author}*/}
-            {/*                        </li>*/}
-            {/*                    ))}*/}
-            {/*                </ul>*/}
-            {/*            ) : (*/}
-            {/*                <p>No books borrowed.</p>*/}
-            {/*            )}*/}
-            {/*            <div className="flex justify-end mt-4">*/}
-            {/*                <button onClick={() => setUserModalOpen(false)} className="btn-secondary px-4 py-2">Close</button>*/}
-            {/*            </div>*/}
-            {/*        </div>*/}
-            {/*    </div>*/}
-            {/*)}*/}
         </div>
     );
 }

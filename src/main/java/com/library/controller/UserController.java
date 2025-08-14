@@ -4,7 +4,6 @@ import com.library.config.JwtService;
 import com.library.dto.BookDTO;
 import com.library.dto.UserDTO;
 import com.library.entity.Transaction;
-import com.library.mappers.UserMapper;
 import com.library.entity.User;
 import com.library.repository.UserRepository;
 import com.library.service.BookService;
@@ -13,6 +12,7 @@ import com.library.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
@@ -35,12 +35,31 @@ public class UserController {
     private UserDetailsService userDetailsService;
     @Autowired
     private TransactionService transactionService;
+    @Autowired
+    private UserRepository userRepository;
 
 
-
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/create_user")
     public UserDTO createUser(@RequestBody UserDTO userDTO) {
         return userService.addUser(userDTO);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<User> updateUser(
+            @PathVariable Long id,
+            @RequestBody User updatedUser
+    ) {
+        User user = userService.getUserById(id);
+
+        user.setName(updatedUser.getName());
+        user.setPassword(updatedUser.getPassword());
+        user.setEmail(updatedUser.getEmail());
+        user.setRole(updatedUser.getRole());
+        user.setCredits(updatedUser.getCredits());
+
+        User savedUser = userRepository.save(user);
+        return ResponseEntity.ok(savedUser);
     }
 
     @GetMapping("/me")

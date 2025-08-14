@@ -53,7 +53,6 @@ public class BookController {
         BookDTO bookDTO = bookService.getBookById(id);
         Book book = BookMapper.MAPPER.toEntity(bookDTO);
 
-        // Обновляем поля
         book.setTitle(updatedBook.getTitle());
         book.setAuthor(updatedBook.getAuthor());
         book.setDescription(updatedBook.getDescription());

@@ -76,5 +76,4 @@ public class BookService {
         return book.getPrice();
     }
 
-    //todo закладки
 }
