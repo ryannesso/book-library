@@ -39,7 +39,13 @@ public class KafkaConsumer {
 
             transactionService.updateTransaction(transaction.getId());
             book.setAvailableCopies(book.getAvailableCopies() + 1);
-            bookRepository.save(book);
+            if(book.getAvailableCopies() > 0) {
+                book.setStatus(true);
+                bookRepository.save(book);
+            }
+            else {
+                bookRepository.save(book);
+            }
         } else if ("BORROW".equalsIgnoreCase(event.actionType())) {
             Optional<Transaction> transactions = transactionRepository.findByUserIdAndBookIdAndIsActiveTrue(event.userId(), event.bookId());
             if (transactions.isPresent()) {
@@ -56,7 +62,13 @@ public class KafkaConsumer {
             }
 
             book.setAvailableCopies(book.getAvailableCopies() - 1);
-            bookRepository.save(book);
+            if(book.getAvailableCopies() <= 0) {
+                book.setStatus(false);
+                bookRepository.save(book);
+            }
+            else {
+                bookRepository.save(book);
+            }
             transactionService.addTransaction(event.userId(), event.bookId(), ActionType.BORROW);
         }
     }

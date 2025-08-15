@@ -21,13 +21,22 @@ type User = {
     credits: number;
 };
 
+type Transaction = {
+    id: number;
+    userId: number;
+    bookId: string;
+    borrowDate: string;
+    returnDate?: string;
+    active: string; // например "ACTIVE" или "RETURNED"
+};
+
 export default function AdminPage() {
     const router = useRouter();
     const [tab, setTab] = useState<"books" | "users" | "stats">("books");
 
     const [books, setBooks] = useState<Book[]>([]);
     const [users, setUsers] = useState<User[]>([]);
-    const [stats, setStats] = useState({ totalBooks: 0, totalUsers: 0, borrowed: 0 });
+    const [stats, setStats] = useState({ bookCount: 0, userCount: 0, borrowCount: 0 });
 
     const [modalOpen, setModalOpen] = useState(false);
     const [editBookMode, setEditBookMode] = useState(false);
@@ -40,6 +49,8 @@ export default function AdminPage() {
 
     const [loadingUser, setLoadingUser] = useState(true);
     const [accessDenied, setAccessDenied] = useState(false);
+
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
 
     // Проверка авторизации админа
     useEffect(() => {
@@ -66,6 +77,7 @@ export default function AdminPage() {
         fetchBooks();
         fetchUsers();
         fetchStats();
+        fetchTransactions(); // <-- добавляем
     }, [loadingUser, accessDenied]);
 
     const fetchBooks = async () => {
@@ -79,8 +91,17 @@ export default function AdminPage() {
     };
 
     const fetchStats = async () => {
-        const res = await axios.get("http://localhost:8081/api/admin/stats", { withCredentials: true });
+        const res = await axios.get("http://localhost:8081/api/users/admin/stats", { withCredentials: true });
         setStats(res.data);
+    };
+
+    const fetchTransactions = async () => {
+        try {
+            const res = await axios.get("http://localhost:8081/api/transaction/transactions", { withCredentials: true });
+            setTransactions(res.data);
+        } catch (err) {
+            console.error("Failed to fetch transactions", err);
+        }
     };
 
     // --- Book Modals
@@ -202,6 +223,7 @@ export default function AdminPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {users.map(user => (
                             <div key={user.id} className="card-base p-6">
+                                <p className="text-text-muted">ID: {user.id}</p>
                                 <h3 className="text-xl">{user.name}</h3>
                                 <p className="text-text-muted">{user.email}</p>
                                 <p className="text-text-muted">Books borrowed: {user.borrowBooks}</p>
@@ -266,6 +288,57 @@ export default function AdminPage() {
                     </div>
                 </div>
             )}
+            {tab === "stats" && (
+                <div className="p-6">
+                    <h2 className="text-2xl font-bold mb-6">Library Statistics</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="card-base p-6 text-center">
+                            <h3 className="text-xl font-bold">Total Books</h3>
+                            <p className="text-3xl mt-2 text-text-accent">{stats.bookCount}</p>
+                        </div>
+                        <div className="card-base p-6 text-center">
+                            <h3 className="text-xl font-bold">Total Users</h3>
+                            <p className="text-3xl mt-2 text-text-accent">{stats.userCount}</p>
+                        </div>
+                        <div className="card-base p-6 text-center">
+                            <h3 className="text-xl font-bold">Borrowed Books</h3>
+                            <p className="text-3xl mt-2 text-text-accent">{stats.borrowCount}</p>
+                        </div>
+                    </div>
+
+                    {/* Список транзакций */}
+                    <h3 className="text-xl font-bold mb-4">Transactions</h3>
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full border border-border-color">
+                            <thead>
+                            <tr className="bg-background-secondary">
+                                <th className="px-4 py-2 border border-border-color">ID</th>
+                                <th className="px-4 py-2 border border-border-color">User</th>
+                                <th className="px-4 py-2 border border-border-color">Book</th>
+                                <th className="px-4 py-2 border border-border-color">Borrow Date</th>
+                                <th className="px-4 py-2 border border-border-color">Return Date</th>
+                                <th className="px-4 py-2 border border-border-color">Status</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {transactions.map(tx => (
+                                <tr key={tx.id}>
+                                    <td className="px-4 py-2 border border-border-color">{tx.id}</td>
+                                    <td className="px-4 py-2 border border-border-color">{tx.userId}</td>
+                                    <td className="px-4 py-2 border border-border-color">{tx.bookId}</td>
+                                    <td className="px-4 py-2 border border-border-color">{tx.borrowDate}</td>
+                                    <td className="px-4 py-2 border border-border-color">{tx.returnDate || "-"}</td>
+                                    <td className="px-4 py-2 border border-border-color">
+                                        {tx.active ? "ACTIVE" : "RETURNED"}
+                                    </td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
 
             {/* Book Modal */}
             {modalOpen && (

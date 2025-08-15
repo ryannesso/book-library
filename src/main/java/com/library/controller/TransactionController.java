@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -66,6 +67,11 @@ public class TransactionController {
 //    public Transaction createTransaction(@RequestBody Transaction transaction) {
 //        return transactionService.addTransaction(transaction);
 //    }
+
+    @GetMapping("/transactions")
+    public ResponseEntity<List<Transaction>> getAllTransactions() {
+        return ResponseEntity.ok().body(transactionRepository.findAll());
+    }
 
 
 

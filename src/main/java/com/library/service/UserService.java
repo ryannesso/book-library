@@ -5,15 +5,20 @@ import com.library.dto.UserDTO;
 import com.library.entity.enums.ERole;
 import com.library.mappers.UserMapper;
 import com.library.entity.User;
+import com.library.repository.BookRepository;
+import com.library.repository.TransactionRepository;
 import com.library.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -26,6 +31,12 @@ public class UserService {
     private UserMapper userMapper;
 
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private BookService bookService;
+    @Autowired
+    private BookRepository bookRepository;
+    @Autowired
+    private TransactionRepository transactionRepository;
 
 
     //todo rename to register or registerUser
@@ -114,6 +125,15 @@ public class UserService {
         return userMapper.toDTO(userList);
     }
 
-
+    public Map<String, Integer> getAdminStats() {
+        int bookCount = bookRepository.findAll().size();
+        int userCount = userRepository.findAll().size();
+        int borrowCount = transactionRepository.countActiveTransactionsByStatus();
+        Map<String, Integer> stats = new HashMap<>();
+        stats.put("bookCount", bookCount);
+        stats.put("userCount", userCount);
+        stats.put("borrowCount", borrowCount);
+        return stats;
+    }
 
 }

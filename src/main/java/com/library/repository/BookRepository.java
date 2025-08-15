@@ -8,5 +8,5 @@ import java.util.List;
 
 public interface BookRepository extends JpaRepository<Book, Long> {
     public List<Book> getByTitle(String title);
-    public BookDTO getBookById(Long id);
+    public Book getBookById(Long id);
 }

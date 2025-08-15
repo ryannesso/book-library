@@ -69,10 +69,16 @@ public class TransactionService {
         if(userCredits < bookPrice) {
             throw new IllegalArgumentException("Not enough credits");
         }
-        userService.subtractCredits(userId, bookPrice);
-        userService.addBorrowCount(userId);
-        BookActionEvent event = new BookActionEvent(userId, bookId, "BORROW");
-        kafkaProducer.sendBookAction(event);
+        if(bookService.getStatus(bookId)) {
+            userService.subtractCredits(userId, bookPrice);
+            userService.addBorrowCount(userId);
+            BookActionEvent event = new BookActionEvent(userId, bookId, "BORROW");
+            kafkaProducer.sendBookAction(event);
+        }
+        else {
+            System.out.println("Book not available");
+        }
+
     }
 
     public void returnBook(Long borrowId) {
@@ -89,9 +95,6 @@ public class TransactionService {
 
     public List<Transaction> getAllTransactions() {
         return transactionRepository.findAll();
-    }
-    public Optional<Transaction> hasActiveTransaction(Long Id) {
-        return transactionRepository.findById(Id);
     }
 
 }

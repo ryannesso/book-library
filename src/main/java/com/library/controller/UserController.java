@@ -119,5 +119,13 @@ public class UserController {
         return ResponseEntity.ok(userDTOs);
     }
 
+    @GetMapping("/admin/stats")
+    public ResponseEntity<?> getUserStats(@CookieValue(name = "jwt", required = false) String jwt) {
+        if (jwt == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authorized");
+        }
+        return ResponseEntity.ok(userService.getAdminStats());
+    }
+
 
 }

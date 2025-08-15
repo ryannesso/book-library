@@ -31,6 +31,7 @@ public class BookService {
 
     public BookDTO addBooks(BookDTO bookDTO) {
         Book book = BookMapper.MAPPER.toEntity(bookDTO);
+        book.setStatus(true);
         book = bookRepository.save(book);
         return BookMapper.MAPPER.toDTO(book);
     }
@@ -53,7 +54,7 @@ public class BookService {
 //    }
 
 
-    public BookDTO getBookById(Long id) {
+    public Book getBookById(Long id) {
         return bookRepository.getBookById(id);
     }
 
@@ -66,6 +67,18 @@ public class BookService {
         bookRepository.deleteById(Id);
     }
 
+    public Book updateBook(Long id, BookDTO updatedBookDTO) {
+        Book book = bookRepository.getBookById(id);
+        book.setTitle(updatedBookDTO.title());
+        book.setAuthor(updatedBookDTO.author());
+        book.setDescription(updatedBookDTO.description());
+        book.setPrice(updatedBookDTO.price());
+        book.setAvailableCopies(updatedBookDTO.availableCopies());
+        book.setStatus(updatedBookDTO.status());
+
+        return bookRepository.save(book);
+    }
+
     public List<BookDTO> getAllBooks() {
         List<Book> books = bookRepository.findAll();
         return BookMapper.MAPPER.toDTO(books);
@@ -74,6 +87,11 @@ public class BookService {
         Optional<Book> OpBook = bookRepository.findById(bookId);
         Book book = OpBook.orElseThrow(() -> new EntityNotFoundException("book not found"));
         return book.getPrice();
+    }
+
+    public boolean getStatus(Long bookId) {
+        Book book = bookRepository.findById(bookId).orElseThrow(() -> new EntityNotFoundException("book not found"));
+        return book.isStatus();
     }
 
 }

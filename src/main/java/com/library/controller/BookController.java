@@ -46,27 +46,17 @@ public class BookController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Book> updateBook(
+    public ResponseEntity<BookDTO> updateBook(
             @PathVariable Long id,
-            @RequestBody Book updatedBook
+            @RequestBody BookDTO updatedBookDTO
     ) {
-        BookDTO bookDTO = bookService.getBookById(id);
-        Book book = BookMapper.MAPPER.toEntity(bookDTO);
-
-        book.setTitle(updatedBook.getTitle());
-        book.setAuthor(updatedBook.getAuthor());
-        book.setDescription(updatedBook.getDescription());
-        book.setPrice(updatedBook.getPrice());
-        book.setAvailableCopies(updatedBook.getAvailableCopies());
-        book.setStatus(updatedBook.isStatus());
-
-        Book savedBook = bookRepository.save(book);
-        return ResponseEntity.ok(savedBook);
+        Book updatedBook = bookService.updateBook(id, updatedBookDTO);
+        return ResponseEntity.ok(BookMapper.MAPPER.toDTO(updatedBook));
     }
 
     @GetMapping("/{id}")
     public BookDTO getBookById(@PathVariable Long id) {
-        return bookService.getBookById(id);
+        return BookMapper.MAPPER.toDTO(bookService.getBookById(id));
     }
 
     @GetMapping("/title")
