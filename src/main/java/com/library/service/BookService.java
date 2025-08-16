@@ -22,18 +22,19 @@ import java.util.stream.Collectors;
 public class BookService {
 
 
-    public BookService(BookRepository bookRepository) {
+    private final BookMapper bookMapper;
+
+    public BookService(BookRepository bookRepository, BookMapper bookMapper) {
         this.bookRepository = bookRepository;
+        this.bookMapper = bookMapper;
     }
 
      private  final BookRepository bookRepository;
 
 
-    public BookDTO addBooks(BookDTO bookDTO) {
-        Book book = BookMapper.MAPPER.toEntity(bookDTO);
+    public Book addBooks(Book book) {
         book.setStatus(true);
-        book = bookRepository.save(book);
-        return BookMapper.MAPPER.toDTO(book);
+        return bookRepository.save(book);
     }
 
 //    public void borrowBook(Long userId, Long bookId) {
@@ -58,30 +59,28 @@ public class BookService {
         return bookRepository.getBookById(id);
     }
 
-    public List<BookDTO> getBookByTitle(String title) {
-        List<Book> books = bookRepository.getByTitle(title);
-        return BookMapper.MAPPER.toDtoList(books);
+    public List<Book> getBookByTitle(String title) {
+        return bookRepository.getByTitle(title);
     }
 
     public void deleteBookById(Long Id) {
         bookRepository.deleteById(Id);
     }
 
-    public Book updateBook(Long id, BookDTO updatedBookDTO) {
-        Book book = bookRepository.getBookById(id);
-        book.setTitle(updatedBookDTO.title());
-        book.setAuthor(updatedBookDTO.author());
-        book.setDescription(updatedBookDTO.description());
-        book.setPrice(updatedBookDTO.price());
-        book.setAvailableCopies(updatedBookDTO.availableCopies());
-        book.setStatus(updatedBookDTO.status());
-
-        return bookRepository.save(book);
+    public Book updateBook(Long id, Book book) {
+//        Book book = bookMapper.toEntity(updatedBookDTO);
+        Book updatedBook = bookRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Book not found"));
+        updatedBook.setTitle(book.getTitle());
+        updatedBook.setAuthor(book.getAuthor());
+        updatedBook.setDescription(book.getDescription());
+        updatedBook.setStatus(book.isStatus());
+        updatedBook.setAvailableCopies(book.getAvailableCopies());
+        updatedBook.setPrice(book.getPrice());
+        return bookRepository.save(updatedBook);
     }
 
-    public List<BookDTO> getAllBooks() {
-        List<Book> books = bookRepository.findAll();
-        return BookMapper.MAPPER.toDTO(books);
+    public List<Book> getAllBooks() {
+        return bookRepository.findAll();
     }
     public int getPrice(Long bookId) {
         Optional<Book> OpBook = bookRepository.findById(bookId);

@@ -3,8 +3,11 @@ package com.library.controller;
 import com.library.config.JwtService;
 import com.library.dto.BookDTO;
 import com.library.dto.UserDTO;
+import com.library.entity.Book;
 import com.library.entity.Transaction;
 import com.library.entity.User;
+import com.library.mappers.BookMapper;
+import com.library.mappers.UserMapper;
 import com.library.repository.UserRepository;
 import com.library.service.BookService;
 import com.library.service.TransactionService;
@@ -37,29 +40,28 @@ public class UserController {
     private TransactionService transactionService;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private UserMapper userMapper;
+    @Autowired
+    private BookMapper bookMapper;
 
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/create_user")
     public UserDTO createUser(@RequestBody UserDTO userDTO) {
-        return userService.addUser(userDTO);
+        User user = userService.addUser(userDTO);
+        return userMapper.toDTO(user);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(
+    public ResponseEntity<UserDTO> updateUser(
             @PathVariable Long id,
-            @RequestBody User updatedUser
+            @RequestBody UserDTO updatedUserDTO
     ) {
-        User user = userService.getUserById(id);
 
-        user.setName(updatedUser.getName());
-        user.setPassword(updatedUser.getPassword());
-        user.setEmail(updatedUser.getEmail());
-        user.setRole(updatedUser.getRole());
-        user.setCredits(updatedUser.getCredits());
-
-        User savedUser = userRepository.save(user);
-        return ResponseEntity.ok(savedUser);
+        User updatedUser = userMapper.toEntity(updatedUserDTO);
+        userService.updateUser(id, updatedUser);
+        return ResponseEntity.ok(userMapper.toDTO(updatedUser));
     }
 
     @GetMapping("/me")
@@ -73,8 +75,8 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
         }
 
-        User user = userService.getUserByEmail(username);
-        return ResponseEntity.ok(user);
+        UserDTO userDTO = userMapper.toDTO(userService.getUserByEmail(username));
+        return ResponseEntity.ok(userDTO);
     }
 
     @GetMapping("/my_books")
@@ -96,7 +98,7 @@ public class UserController {
                 .collect(Collectors.toList());
 
         // Получаем список всех книг
-        List<BookDTO> allBooks = bookService.getAllBooks();
+        List<BookDTO> allBooks = bookMapper.toDTO(bookService.getAllBooks());
 
         // Получаем список id книг, взятых пользователем
         Set<Long> userBookIds = usersTransactions.stream()
@@ -115,7 +117,7 @@ public class UserController {
         if (jwt == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authorized");
         }
-        List<UserDTO> userDTOs = userService.getAllUsers();
+        List<UserDTO> userDTOs = userMapper.toDTO(userService.getAllUsers());
         return ResponseEntity.ok(userDTOs);
     }
 

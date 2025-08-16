@@ -26,17 +26,22 @@ import java.util.Optional;
 @RequestMapping("/api/books")
 public class BookController {
 
-    @Autowired private BookService bookService;
+    @Autowired
+    private BookService bookService;
     @Autowired
     private BookRepository bookRepository;
+    @Autowired
+    private BookMapper bookMapper;
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/create")
     public BookDTO createBook(@RequestBody BookDTO bookDTO) {
-            if(bookDTO.availableCopies() < 0) {
-                throw new IllegalArgumentException("cannot be negative");
-            }
-        return bookService.addBooks(bookDTO);
+        if(bookDTO.availableCopies() < 0) {
+            throw new IllegalArgumentException("cannot be negative");
+        }
+        Book book = bookService.addBooks(bookMapper.toEntity(bookDTO));
+
+        return bookMapper.toDTO(book);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -50,8 +55,10 @@ public class BookController {
             @PathVariable Long id,
             @RequestBody BookDTO updatedBookDTO
     ) {
-        Book updatedBook = bookService.updateBook(id, updatedBookDTO);
-        return ResponseEntity.ok(BookMapper.MAPPER.toDTO(updatedBook));
+
+        Book updatedBook = bookMapper.toEntity(updatedBookDTO);
+        bookService.updateBook(id, updatedBook);
+        return ResponseEntity.ok(bookMapper.toDTO(updatedBook));
     }
 
     @GetMapping("/{id}")
@@ -61,12 +68,12 @@ public class BookController {
 
     @GetMapping("/title")
     public List<BookDTO> getBooksByTitle(@RequestParam String title) {
-        return bookService.getBookByTitle(title);
+        return bookMapper.toDTO(bookService.getBookByTitle(title));
     }
 
     @GetMapping("/all")
     public List<BookDTO> getAllBooks() {
-        return bookService.getAllBooks();
+        return bookMapper.toDTO(bookService.getAllBooks());
     }
 }
 

@@ -2,6 +2,7 @@ package com.library.service;
 
 
 import com.library.dto.UserDTO;
+import com.library.entity.Book;
 import com.library.entity.enums.ERole;
 import com.library.mappers.UserMapper;
 import com.library.entity.User;
@@ -40,7 +41,7 @@ public class UserService {
 
 
     //todo rename to register or registerUser
-    public UserDTO addUser(UserDTO userDTO){
+    public User addUser(UserDTO userDTO){
         User user = userMapper.toEntity(userDTO);
         if (user.getRole() == null) {
             user.setRole(ERole.USER);
@@ -51,17 +52,29 @@ public class UserService {
         String encodedPassword = passwordEncoder.encode(userDTO.password());
         user.setPassword(encodedPassword);
         user.setCredits(1000);
-        User savedUser = userRepository.save(user);
-        UserDTO savedUserDTO = userMapper.toDTO(savedUser);
-        return savedUserDTO;
+        return userRepository.save(user);
     }
 
-    public List<UserDTO> getUserByName(String name) {
+    public User updateUser(Long id, User user){
+        User updatedUser = userRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("User not found"));
+        updatedUser.setName(user.getName());
+        updatedUser.setEmail(user.getEmail());
+        if(user.getPassword() == null){
+            System.out.println("password will not to change");
+        }
+        else {
+            updatedUser.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
+        updatedUser.setCredits(user.getCredits());
+        return userRepository.save(updatedUser);
+    }
+
+    public List<User> getUserByName(String name) {
         List<User> userList = userRepository.findByName(name);
         if(userList.isEmpty()){
             throw new IllegalArgumentException("User not found");
         }
-        return userMapper.toDTO(userList);
+        return userList;
     }
 
     public User getUserByEmail(String email) {
@@ -120,9 +133,8 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public List<UserDTO> getAllUsers() {
-        List<User> userList = userRepository.findAll();
-        return userMapper.toDTO(userList);
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 
     public Map<String, Integer> getAdminStats() {
