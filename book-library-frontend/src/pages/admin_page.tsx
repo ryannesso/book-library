@@ -74,11 +74,24 @@ export default function AdminPage() {
     // Загрузка данных только если админ
     useEffect(() => {
         if (loadingUser || accessDenied) return;
-        fetchBooks();
-        fetchUsers();
-        fetchStats();
-        fetchTransactions(); // <-- добавляем
+
+        const fetchData = async () => {
+            await fetchBooks();
+            await fetchUsers();
+            await fetchStats();
+            await fetchTransactions();
+        };
+
+        // Первый вызов сразу
+        fetchData();
+
+        // Далее каждые 10 секунд
+        const interval = setInterval(fetchData, 10000);
+
+        // Очистка интервала при размонтировании компонента
+        return () => clearInterval(interval);
     }, [loadingUser, accessDenied]);
+
 
     const fetchBooks = async () => {
         const res = await axios.get("http://localhost:8081/api/books/all", { withCredentials: true });
@@ -321,18 +334,21 @@ export default function AdminPage() {
                             </tr>
                             </thead>
                             <tbody>
-                            {transactions.map(tx => (
-                                <tr key={tx.id}>
-                                    <td className="px-4 py-2 border border-border-color">{tx.id}</td>
-                                    <td className="px-4 py-2 border border-border-color">{tx.userId}</td>
-                                    <td className="px-4 py-2 border border-border-color">{tx.bookId}</td>
-                                    <td className="px-4 py-2 border border-border-color">{tx.borrowDate}</td>
-                                    <td className="px-4 py-2 border border-border-color">{tx.returnDate || "-"}</td>
-                                    <td className="px-4 py-2 border border-border-color">
-                                        {tx.active ? "ACTIVE" : "RETURNED"}
-                                    </td>
-                                </tr>
-                            ))}
+                            {transactions
+                                .slice() // создаем копию, чтобы не мутировать state
+                                .sort((a, b) => new Date(b.borrowDate).getTime() - new Date(a.borrowDate).getTime()) // новые сверху
+                                .map(tx => (
+                                    <tr key={tx.id}>
+                                        <td className="px-4 py-2 border border-border-color">{tx.id}</td>
+                                        <td className="px-4 py-2 border border-border-color">{tx.userId}</td>
+                                        <td className="px-4 py-2 border border-border-color">{tx.bookId}</td>
+                                        <td className="px-4 py-2 border border-border-color">{tx.borrowDate}</td>
+                                        <td className="px-4 py-2 border border-border-color">{tx.returnDate || "-"}</td>
+                                        <td className="px-4 py-2 border border-border-color">
+                                            {tx.active ? "ACTIVE" : "RETURNED"}
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>
