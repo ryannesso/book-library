@@ -8,10 +8,6 @@ import com.library.dto.request.userRequest.RegisterRequest;
 import com.library.entity.User;
 import com.library.mappers.UserMapper;
 import com.library.service.UserService;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -24,14 +20,17 @@ import java.time.Duration;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @Autowired
-    private UserService userService;
-    @Autowired
-    private UserMapper userMapper;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    @Autowired
-    private JwtService jwtService;
+    private final UserService userService;
+    private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+
+    public AuthController(UserService userService, UserMapper userMapper, PasswordEncoder passwordEncoder, JwtService jwtService) {
+        this.userService = userService;
+        this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
+    }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {

@@ -8,6 +8,7 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -22,7 +23,8 @@ import java.util.function.Function;
 public class JwtService {
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
-    private static final String SECRET = "16itlFihsAUeHtskmBXSx+AaescJbPNt4XSaC/xWn0w=";
+    @Value("${app.secret.password}")
+    private String SECRET;
 
     public String extractName(String jwt) {
         return extractClaim(jwt, Claims::getSubject);

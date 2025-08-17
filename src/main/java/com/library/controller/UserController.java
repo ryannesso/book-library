@@ -3,16 +3,13 @@ package com.library.controller;
 import com.library.config.JwtService;
 import com.library.dto.BookDTO;
 import com.library.dto.UserDTO;
-import com.library.entity.Book;
 import com.library.entity.Transaction;
 import com.library.entity.User;
 import com.library.mappers.BookMapper;
 import com.library.mappers.UserMapper;
-import com.library.repository.UserRepository;
 import com.library.service.BookService;
 import com.library.service.TransactionService;
 import com.library.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,22 +25,25 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/users")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
-    @Autowired
-    private BookService bookService;
-    @Autowired
-    private JwtService jwtService;
-    @Autowired
-    private UserDetailsService userDetailsService;
-    @Autowired
-    private TransactionService transactionService;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private UserMapper userMapper;
-    @Autowired
-    private BookMapper bookMapper;
+    private final UserService userService;
+    private final BookService bookService;
+    private final JwtService jwtService;
+    private final UserDetailsService userDetailsService;
+    private final TransactionService transactionService;
+    private final UserMapper userMapper;
+    private final BookMapper bookMapper;
+
+    public UserController(UserService userService, BookService bookService, JwtService jwtService,
+                          UserDetailsService userDetailsService, TransactionService transactionService,
+                          UserMapper userMapper, BookMapper bookMapper) {
+        this.userService = userService;
+        this.bookService = bookService;
+        this.jwtService = jwtService;
+        this.userDetailsService = userDetailsService;
+        this.transactionService = transactionService;
+        this.userMapper = userMapper;
+        this.bookMapper = bookMapper;
+    }
 
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -95,7 +95,7 @@ public class UserController {
         // Получаем все транзакции пользователя
         List<Transaction> usersTransactions = transactionService.getAllTransactions().stream()
                 .filter(t -> t.getUserId().equals(userId) && t.isActive())
-                .collect(Collectors.toList());
+                .toList();
 
         // Получаем список всех книг
         List<BookDTO> allBooks = bookMapper.toDTO(bookService.getAllBooks());

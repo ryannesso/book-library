@@ -1,37 +1,28 @@
 package com.library.controller;
 
-import com.library.config.JwtAuthenticationFilter;
-import com.library.config.JwtService;
+
 import com.library.dto.BookDTO;
-import com.library.dto.request.transactionalRequest.BorrowRequest;
-import com.library.dto.request.transactionalRequest.ReturnRequest;
 import com.library.entity.Book;
-import com.library.entity.Transaction;
 import com.library.mappers.BookMapper;
-import com.library.repository.BookRepository;
-import com.library.repository.TransactionRepository;
 import com.library.service.BookService;
-import com.library.service.TransactionService;
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/books")
 public class BookController {
 
-    @Autowired
-    private BookService bookService;
-    @Autowired
-    private BookRepository bookRepository;
-    @Autowired
-    private BookMapper bookMapper;
+
+    private final BookService bookService;
+    private final BookMapper bookMapper;
+
+    public BookController(BookService bookService, BookMapper bookMapper) {
+        this.bookService = bookService;
+        this.bookMapper = bookMapper;
+    }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/create")

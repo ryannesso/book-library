@@ -1,36 +1,24 @@
 package com.library.service;
 
-import com.library.dto.request.transactionalRequest.BookActionEvent;
-import com.library.entity.Transaction;
-import com.library.mappers.BookMapper;
-import com.library.dto.BookDTO;
+
 import com.library.entity.Book;
 import com.library.repository.BookRepository;
-import com.library.repository.TransactionRepository;
-import com.library.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class BookService {
 
+    private final BookRepository bookRepository;
 
-    private final BookMapper bookMapper;
-
-    public BookService(BookRepository bookRepository, BookMapper bookMapper) {
+    public BookService(BookRepository bookRepository) {
         this.bookRepository = bookRepository;
-        this.bookMapper = bookMapper;
     }
-
-     private  final BookRepository bookRepository;
-
 
     public Book addBooks(Book book) {
         book.setStatus(true);

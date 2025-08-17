@@ -2,7 +2,6 @@ package com.library.service;
 
 
 import com.library.dto.UserDTO;
-import com.library.entity.Book;
 import com.library.entity.enums.ERole;
 import com.library.mappers.UserMapper;
 import com.library.entity.User;
@@ -11,11 +10,8 @@ import com.library.repository.TransactionRepository;
 import com.library.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.HashMap;
 import java.util.List;
@@ -26,18 +22,13 @@ import java.util.Optional;
 @AllArgsConstructor
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private UserMapper userMapper;
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final BookRepository bookRepository;
+    private final TransactionRepository transactionRepository;
 
-    private PasswordEncoder passwordEncoder;
-    @Autowired
-    private BookService bookService;
-    @Autowired
-    private BookRepository bookRepository;
-    @Autowired
-    private TransactionRepository transactionRepository;
+
 
 
     //todo rename to register or registerUser

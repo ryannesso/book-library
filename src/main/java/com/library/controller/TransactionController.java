@@ -7,10 +7,8 @@ import com.library.dto.request.transactionalRequest.BorrowRequest;
 import com.library.dto.request.transactionalRequest.ReturnRequest;
 import com.library.entity.Transaction;
 import com.library.repository.TransactionRepository;
-import com.library.service.BookService;
 import com.library.service.TransactionService;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,20 +19,17 @@ import java.util.Optional;
 @RequestMapping("/api/transaction")
 public class TransactionController {
     private final TransactionService transactionService;
-    private final BookService bookService;
     private final TransactionRepository transactionRepository;
     private final JwtAuthenticationFilter jwtFilter;
     private final JwtService jwtService;
 
     public TransactionController(
             TransactionService transactionService,
-            BookService bookService,
             TransactionRepository transactionRepository,
             JwtAuthenticationFilter jwtFilter,
             JwtService jwtService
     ) {
         this.transactionService = transactionService;
-        this.bookService = bookService;
         this.transactionRepository = transactionRepository;
         this.jwtFilter = jwtFilter;
         this.jwtService = jwtService;
