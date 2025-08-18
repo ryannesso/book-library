@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/router";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 type User = {
     id: number;
     name: string;
@@ -27,12 +29,12 @@ export default function ProfilePage() {
     const [books, setBooks] = useState<Book[]>([]);
     const [loadingUser, setLoadingUser] = useState(true);
     const [loadingBooks, setLoadingBooks] = useState(true);
-    const [userError, setUserError] = useState('');
-    const [booksError, setBooksError] = useState('');
+    const [userError, setUserError] = useState("");
+    const [booksError, setBooksError] = useState("");
     const [returningBookId, setReturningBookId] = useState<number | null>(null);
-    const [mounted, setMounted] = useState(false); // защита от гидратации
+    const [mounted, setMounted] = useState(false);
 
-    // --- Монтирование
+    // --- Монтирование (для гидратации)
     useEffect(() => {
         setMounted(true);
     }, []);
@@ -41,28 +43,40 @@ export default function ProfilePage() {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const res = await axios.get('http://localhost:8081/api/users/me', { withCredentials: true });
+                const res = await axios.get<User>(`${API_URL}/api/users/me`, {
+                    withCredentials: true,
+                });
                 setUser(res.data);
-            } catch {
-                setUserError('Failed to load user data. Please log in again.');
-                router.push('/login_page');
+            } catch (err) {
+                console.error("Failed to load user", err);
+                setUser(null);
+                setUserError("Unauthorized. Please log in.");
             } finally {
                 setLoadingUser(false);
             }
         };
         fetchUser();
-    }, [router]);
+    }, []);
 
-    // --- Загрузка книг после того, как пользователь загружен
+    // --- Если пользователь реально не авторизован → редиректим
     useEffect(() => {
-        if (!user && !loadingUser) return;
+        if (!loadingUser && !user && userError) {
+            router.push("/login_page");
+        }
+    }, [loadingUser, user, userError, router]);
+
+    // --- Загрузка книг пользователя
+    useEffect(() => {
+        if (loadingUser || !user) return;
 
         const fetchBooks = async () => {
             try {
-                const res = await axios.get('http://localhost:8081/api/users/my_books', { withCredentials: true });
+                const res = await axios.get<Book[]>(`${API_URL}/api/users/my_books`, {
+                    withCredentials: true,
+                });
                 setBooks(res.data);
             } catch {
-                setBooksError('Failed to load your books');
+                setBooksError("Failed to load your books");
             } finally {
                 setLoadingBooks(false);
             }
@@ -70,46 +84,72 @@ export default function ProfilePage() {
         fetchBooks();
     }, [user, loadingUser]);
 
+    // --- Возврат книги
     const handleReturn = async (bookId: number) => {
         setReturningBookId(bookId);
         try {
-            await axios.put('http://localhost:8081/api/transaction/return', { bookId }, { withCredentials: true });
-            setBooks(prevBooks => prevBooks.filter(book => book.id !== bookId));
-            // Обновление баланса после возврата
-            const res = await axios.get('http://localhost:8081/api/users/me', { withCredentials: true });
+            await axios.put(
+                `${API_URL}/api/transaction/return`,
+                { bookId },
+                { withCredentials: true }
+            );
+
+            // Обновляем книги
+            setBooks((prevBooks) => prevBooks.filter((book) => book.id !== bookId));
+
+            // Обновляем баланс пользователя
+            const res = await axios.get<User>(`${API_URL}/api/users/me`, {
+                withCredentials: true,
+            });
             setUser(res.data);
-            alert('Book successfully returned!');
+
+            alert("Book successfully returned!");
         } catch (err) {
-            console.error('Return failed', err);
-            alert('Failed to return the book. Please try again.');
+            console.error("Return failed", err);
+            alert("Failed to return the book. Please try again.");
         } finally {
             setReturningBookId(null);
         }
     };
 
     if (loadingUser) {
-        return <div className="min-h-screen flex items-center justify-center bg-background-primary text-text-light text-xl">Loading user data...</div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background-primary text-text-light text-xl">
+                Loading user data...
+            </div>
+        );
     }
 
-    if (userError) {
-        return <div className="min-h-screen flex items-center justify-center bg-background-primary text-accent-danger text-xl">{userError}</div>;
+    if (userError && !user) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background-primary text-accent-danger text-xl">
+                {userError}
+            </div>
+        );
     }
 
     return (
         <div className="min-h-screen bg-background-primary p-8">
             <div className="max-w-4xl mx-auto">
+                {/* --- Профиль пользователя --- */}
                 <section className="card-base p-10 mb-10 text-center">
-                    <h1 className="text-4xl font-extrabold mb-4 text-text-light">Your Profile</h1>
+                    <h1 className="text-4xl font-extrabold mb-4 text-text-light">
+                        Your Profile
+                    </h1>
                     <p className="text-xl text-text-light mb-1">
-                        Hello, <strong className="text-accent-primary">{user?.name}</strong>!
+                        Hello,{" "}
+                        <strong className="text-accent-primary">{user?.name}</strong>!
                     </p>
                     <p className="text-text-muted text-lg">{user?.email}</p>
                     <p className="text-text-muted text-lg mt-2">
-                        Balance: <span className="text-accent-success font-semibold">${user?.credits?.toFixed(2)}</span>
+                        Balance:{" "}
+                        <span className="text-accent-success font-semibold">
+                            ${user?.credits.toFixed(2)}
+                        </span>
                     </p>
                     <div className="mt-8 flex justify-center gap-4 flex-wrap">
                         <button
-                            onClick={() => router.push('/page')}
+                            onClick={() => router.push("/page")}
                             className="px-8 py-3 btn-primary text-lg"
                         >
                             Go to Main Page
@@ -117,7 +157,7 @@ export default function ProfilePage() {
 
                         {mounted && user?.role === "ADMIN" && (
                             <button
-                                onClick={() => router.push('/admin_page')}
+                                onClick={() => router.push("/admin_page")}
                                 className="px-8 py-3 btn-accent text-lg"
                             >
                                 Go to Admin Panel
@@ -126,20 +166,42 @@ export default function ProfilePage() {
                     </div>
                 </section>
 
+                {/* --- Книги пользователя --- */}
                 <section className="card-base p-10">
-                    <h2 className="text-3xl font-bold mb-8 text-text-light text-center">Your Borrowed Books</h2>
+                    <h2 className="text-3xl font-bold mb-8 text-text-light text-center">
+                        Your Borrowed Books
+                    </h2>
 
-                    {loadingBooks && <p className="text-text-muted text-center text-lg">Loading your books...</p>}
-                    {booksError && <p className="text-accent-danger text-center text-lg">{booksError}</p>}
-                    {!loadingBooks && books.length === 0 && <p className="text-text-muted text-center text-lg">You currently have no borrowed books.</p>}
+                    {loadingBooks && (
+                        <p className="text-text-muted text-center text-lg">
+                            Loading your books...
+                        </p>
+                    )}
+                    {booksError && (
+                        <p className="text-accent-danger text-center text-lg">{booksError}</p>
+                    )}
+                    {!loadingBooks && books.length === 0 && (
+                        <p className="text-text-muted text-center text-lg">
+                            You currently have no borrowed books.
+                        </p>
+                    )}
 
                     <ul className="space-y-6">
-                        {books.map(book => (
-                            <li key={book.id} className="card-base p-6 transition-all duration-300 hover:shadow-xl hover:border-accent-primary transform hover:-translate-y-0.5 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                        {books.map((book) => (
+                            <li
+                                key={book.id}
+                                className="card-base p-6 transition-all duration-300 hover:shadow-xl hover:border-accent-primary transform hover:-translate-y-0.5 flex flex-col sm:flex-row justify-between items-start sm:items-center"
+                            >
                                 <div className="flex-grow mb-4 sm:mb-0">
-                                    <h3 className="text-2xl font-bold text-text-light">{book.title}</h3>
-                                    <p className="text-base text-text-muted mt-1">Author: {book.author}</p>
-                                    <p className="text-sm text-text-muted mt-2 max-w-lg line-clamp-2">{book.description}</p>
+                                    <h3 className="text-2xl font-bold text-text-light">
+                                        {book.title}
+                                    </h3>
+                                    <p className="text-base text-text-muted mt-1">
+                                        Author: {book.author}
+                                    </p>
+                                    <p className="text-sm text-text-muted mt-2 max-w-lg line-clamp-2">
+                                        {book.description}
+                                    </p>
                                 </div>
                                 <button
                                     onClick={() => handleReturn(book.id)}

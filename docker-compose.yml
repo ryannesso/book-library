@@ -13,6 +13,12 @@ services:
       - "3307:3306"
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "book_user", "-pbook_pass123!"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
@@ -35,9 +41,41 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - app-network
+
+  backend:
+    build: .
+    container_name: backend
+    ports:
+      - "8081:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - app-network
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/library_db
+      SPRING_DATASOURCE_USERNAME: book_user
+      SPRING_DATASOURCE_PASSWORD: book_pass123!
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+
+  frontend:
+    build: ./book-library-frontend
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8081
+    depends_on:
+      - backend
     networks:
       - app-network
 

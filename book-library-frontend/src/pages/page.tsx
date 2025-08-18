@@ -9,7 +9,7 @@ type Book = {
     description: string;
     status: boolean;
     availableCopies: number;
-    price: number; // добавлено
+    price: number;
 };
 
 type User = {
@@ -27,41 +27,40 @@ export default function Page() {
     const [query, setQuery] = useState("");
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+    // Проверка авторизации
     useEffect(() => {
         axios
-            .get<User>("http://localhost:8081/api/users/me", {
-                withCredentials: true,
-            })
+            .get<User>(`${API_URL}/api/users/me`, { withCredentials: true })
             .then((res) => {
                 if (res.data?.id) setIsAuthenticated(true);
                 else setIsAuthenticated(false);
             })
             .catch(() => setIsAuthenticated(false));
-    }, []);
+    }, [API_URL]);
 
+    // Загрузка всех книг
     useEffect(() => {
         fetchBooks();
-    }, []);
+    }, [API_URL]);
 
+    // Загрузка книг пользователя
     useEffect(() => {
         if (!isAuthenticated) return;
         axios
-            .get<Book[]>("http://localhost:8081/api/users/my_books", {
-                withCredentials: true,
-            })
+            .get<Book[]>(`${API_URL}/api/users/my_books`, { withCredentials: true })
             .then((res) => {
                 const ids = res.data.map((book) => book.id);
                 setUserBookIds(ids);
             })
-            .catch((err) => {
-                console.error("Error fetching user books:", err);
-            });
-    }, [isAuthenticated]);
+            .catch((err) => console.error("Error fetching user books:", err));
+    }, [isAuthenticated, API_URL]);
 
     const fetchBooks = async () => {
         setLoading(true);
         try {
-            const response = await axios.get("http://localhost:8081/api/books/all");
+            const response = await axios.get(`${API_URL}/api/books/all`);
             setBooks(response.data);
             setError(null);
         } catch (e) {
@@ -76,10 +75,9 @@ export default function Page() {
             fetchBooks();
             return;
         }
-
         setLoading(true);
         try {
-            const response = await axios.get("http://localhost:8081/api/books/title", {
+            const response = await axios.get(`${API_URL}/api/books/title`, {
                 params: { title: query },
             });
             setBooks(response.data);
@@ -94,7 +92,7 @@ export default function Page() {
     const handleLogout = async () => {
         try {
             await axios.post(
-                "http://localhost:8081/api/auth/logout",
+                `${API_URL}/api/auth/logout`,
                 {},
                 { withCredentials: true }
             );
@@ -115,20 +113,25 @@ export default function Page() {
         }
         try {
             await axios.post(
-                "http://localhost:8081/api/transaction/borrow",
+                `${API_URL}/api/transaction/borrow`,
                 { bookId },
                 { withCredentials: true }
             );
             alert("Book successfully borrowed!");
             setUserBookIds((prev) => [...prev, bookId]);
-            setBooks(prevBooks =>
-                prevBooks.map(book =>
-                    book.id === bookId ? { ...book, availableCopies: book.availableCopies - 1 } : book
+            setBooks((prevBooks) =>
+                prevBooks.map((book) =>
+                    book.id === bookId
+                        ? { ...book, availableCopies: book.availableCopies - 1 }
+                        : book
                 )
             );
         } catch (err: any) {
             if (err.response && err.response.status === 400) {
-                alert(err.response.data || "This book is not available or you have already borrowed it.");
+                alert(
+                    err.response.data ||
+                    "This book is not available or you have already borrowed it."
+                );
             } else {
                 alert("Failed to borrow book. Please try again.");
             }
@@ -203,11 +206,25 @@ export default function Page() {
 
             {/* Book List */}
             <div className="max-w-5xl mx-auto p-8 mt-10">
-                <h2 className="text-4xl font-extrabold mb-8 text-text-light text-center">Available Books</h2>
+                <h2 className="text-4xl font-extrabold mb-8 text-text-light text-center">
+                    Available Books
+                </h2>
 
-                {loading && <p className="text-text-muted text-center text-lg">Loading books...</p>}
-                {error && <p className="text-accent-danger text-center text-lg">{error}</p>}
-                {!loading && !error && books.length === 0 && <p className="text-text-muted text-center text-lg">No books found.</p>}
+                {loading && (
+                    <p className="text-text-muted text-center text-lg">
+                        Loading books...
+                    </p>
+                )}
+                {error && (
+                    <p className="text-accent-danger text-center text-lg">
+                        {error}
+                    </p>
+                )}
+                {!loading && !error && books.length === 0 && (
+                    <p className="text-text-muted text-center text-lg">
+                        No books found.
+                    </p>
+                )}
 
                 <div className="max-h-[70vh] overflow-y-auto pr-4">
                     <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -220,16 +237,34 @@ export default function Page() {
                                     <h3 className="text-2xl font-bold text-text-light leading-tight">
                                         {book.title}
                                     </h3>
-                                    <span className="text-text-muted text-sm px-2 py-1 rounded-full bg-background-primary border border-border-color">ID: {book.id}</span>
+                                    <span className="text-text-muted text-sm px-2 py-1 rounded-full bg-background-primary border border-border-color">
+                                        ID: {book.id}
+                                    </span>
                                 </div>
-                                <p className="text-text-muted mt-2 text-base">Author: {book.author}</p>
-                                <p className="text-text-muted mt-1 text-sm line-clamp-2">{book.description}</p>
+                                <p className="text-text-muted mt-2 text-base">
+                                    Author: {book.author}
+                                </p>
+                                <p className="text-text-muted mt-1 text-sm line-clamp-2">
+                                    {book.description}
+                                </p>
                                 <p className="text-text-light mt-2 text-base">
-                                    Price: <span className="font-semibold">${book.price}</span>
+                                    Price:{" "}
+                                    <span className="font-semibold">
+                                        ${book.price}
+                                    </span>
                                 </p>
                                 <p className="text-text-light text-base">
-                                    Copies available: <span className="font-semibold">{book.availableCopies}</span>
+                                    Copies available:{" "}
+                                    <span className="font-semibold">
+                                        {book.availableCopies}
+                                    </span>
                                 </p>
+
+                                <button onClick={() => router.push(`/books/${book.id}`)} className="btn-secondary mt-2">
+                                    View Details
+                                </button>
+
+
 
                                 <div className="mt-5 text-right">
                                     {userBookIds.includes(book.id) ? (
@@ -242,7 +277,9 @@ export default function Page() {
                                             disabled={book.availableCopies === 0}
                                             className="btn-primary px-5 py-2.5 font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            {book.availableCopies === 0 ? "Out of Stock" : "Borrow"}
+                                            {book.availableCopies === 0
+                                                ? "Out of Stock"
+                                                : "Borrow"}
                                         </button>
                                     )}
                                 </div>

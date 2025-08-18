@@ -17,10 +17,13 @@ export default function LoginPage() {
     const [loginSuccess, setLoginSuccess] = useState(false);
     const [loginError, setLoginError] = useState<string | null>(null);
 
+    // api адрес переменной окружения
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
     const handleLogin = async () => {
         try {
             const res = await axios.post(
-                `http://localhost:8081/api/auth/login`,
+                `${API_URL}/api/auth/login`,
                 { email, password },
                 { withCredentials: true }
             );
@@ -29,7 +32,7 @@ export default function LoginPage() {
             setLoginSuccess(true);
             setLoginError(null);
 
-            router.push("/page"); // Redirect after successful login
+            router.push("/page"); // redirect after successful login
         } catch (error: any) {
             setLoginSuccess(false);
             setLoginError("Login failed. Please check your email and password.");

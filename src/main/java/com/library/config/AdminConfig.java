@@ -7,10 +7,10 @@ import com.library.repository.UserRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 
-@Configuration
+@Component
 @RequiredArgsConstructor
 public class AdminConfig {
 
@@ -28,11 +28,13 @@ public class AdminConfig {
 
     @PostConstruct
     public void initAdmin() {
+        System.out.println(">>> Init admin with email: " + adminEmail);
         if(userRepository.findByEmail(adminEmail).isEmpty()) {
             User admin = new User();
             admin.setName(adminUsername);
             admin.setEmail(adminEmail);
-            admin.setPassword(passwordEncoder.encode(adminPassword));            admin.setRole(ERole.ADMIN);
+            admin.setPassword(passwordEncoder.encode(adminPassword));
+            admin.setRole(ERole.ADMIN);
             admin.setCredits(99999);
             admin.setBorrowBooks(0);
             userRepository.save(admin);

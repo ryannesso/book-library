@@ -27,7 +27,7 @@ type Transaction = {
     bookId: string;
     borrowDate: string;
     returnDate?: string;
-    active: string; // например "ACTIVE" или "RETURNED"
+    active: string; // "ACTIVE" или "RETURNED"
 };
 
 export default function AdminPage() {
@@ -52,14 +52,16 @@ export default function AdminPage() {
 
     const [transactions, setTransactions] = useState<Transaction[]>([]);
 
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
     // Проверка авторизации админа
     useEffect(() => {
         const fetchCurrentUser = async () => {
             try {
-                const res = await axios.get<User>("http://localhost:8081/api/users/me", { withCredentials: true });
+                const res = await axios.get<User>(`${API_URL}/api/users/me`, { withCredentials: true });
                 if (res.data.role !== "ADMIN") {
                     setAccessDenied(true);
-                    router.push("/page");
+                    return router.push("/page");
                 }
             } catch (err) {
                 console.error("Failed to fetch current user", err);
@@ -69,7 +71,7 @@ export default function AdminPage() {
             }
         };
         fetchCurrentUser();
-    }, [router]);
+    }, [router, API_URL]);
 
     // Загрузка данных только если админ
     useEffect(() => {
@@ -82,35 +84,33 @@ export default function AdminPage() {
             await fetchTransactions();
         };
 
-        // Первый вызов сразу
         fetchData();
-
-        // Далее каждые 10 секунд
         const interval = setInterval(fetchData, 10000);
 
-        // Очистка интервала при размонтировании компонента
         return () => clearInterval(interval);
-    }, [loadingUser, accessDenied]);
-
+    }, [loadingUser, accessDenied, API_URL]);
 
     const fetchBooks = async () => {
-        const res = await axios.get("http://localhost:8081/api/books/all", { withCredentials: true });
+        const res = await axios.get<Book[]>(`${API_URL}/api/books/all`, { withCredentials: true });
         setBooks(res.data);
     };
 
     const fetchUsers = async () => {
-        const res = await axios.get("http://localhost:8081/api/users/all", { withCredentials: true });
+        const res = await axios.get<User[]>(`${API_URL}/api/users/all`, { withCredentials: true });
         setUsers(res.data);
     };
 
     const fetchStats = async () => {
-        const res = await axios.get("http://localhost:8081/api/users/admin/stats", { withCredentials: true });
+        const res = await axios.get<{ bookCount: number; userCount: number; borrowCount: number }>(
+            `${API_URL}/api/users/admin/stats`,
+            { withCredentials: true }
+        );
         setStats(res.data);
     };
 
     const fetchTransactions = async () => {
         try {
-            const res = await axios.get("http://localhost:8081/api/transaction/transactions", { withCredentials: true });
+            const res = await axios.get<Transaction[]>(`${API_URL}/api/transaction/transactions`, { withCredentials: true });
             setTransactions(res.data);
         } catch (err) {
             console.error("Failed to fetch transactions", err);
@@ -132,9 +132,9 @@ export default function AdminPage() {
 
     const saveBook = async () => {
         if (editBookMode) {
-            await axios.put(`http://localhost:8081/api/books/${currentBook.id}`, currentBook, { withCredentials: true });
+            await axios.put(`${API_URL}/api/books/${currentBook.id}`, currentBook, { withCredentials: true });
         } else {
-            await axios.post("http://localhost:8081/api/books/create", currentBook, { withCredentials: true });
+            await axios.post(`${API_URL}/api/books/create`, currentBook, { withCredentials: true });
         }
         setModalOpen(false);
         fetchBooks();
@@ -142,7 +142,7 @@ export default function AdminPage() {
 
     const deleteBook = async (id: number) => {
         if (confirm("Delete this book?")) {
-            await axios.delete(`http://localhost:8081/api/books/${id}`, { withCredentials: true });
+            await axios.delete(`${API_URL}/api/books/${id}`, { withCredentials: true });
             fetchBooks();
         }
     };
@@ -165,13 +165,13 @@ export default function AdminPage() {
     const saveUser = async () => {
         const payload: any = { ...currentUser };
         if (!editUserMode) {
-            payload.password = currentPassword; // только при создании
+            payload.password = currentPassword;
         }
 
         if (editUserMode) {
-            await axios.put(`http://localhost:8081/api/users/${currentUser.id}`, payload, { withCredentials: true });
+            await axios.put(`${API_URL}/api/users/${currentUser.id}`, payload, { withCredentials: true });
         } else {
-            await axios.post("http://localhost:8081/api/users/create_user", payload, { withCredentials: true });
+            await axios.post(`${API_URL}/api/users/create_user`, payload, { withCredentials: true });
         }
         setUserModalOpen(false);
         fetchUsers();
@@ -282,7 +282,7 @@ export default function AdminPage() {
                         <input
                             type="number"
                             placeholder="Credits"
-                            value={currentUser.credits || 0}
+                            value={currentUser.credits ?? 0}
                             onChange={e => setCurrentUser({ ...currentUser, credits: Number(e.target.value) })}
                             className="w-full mb-2 px-3 py-2 bg-background-primary border border-border-color text-text-light"
                         />
@@ -301,6 +301,8 @@ export default function AdminPage() {
                     </div>
                 </div>
             )}
+
+            {/* Stats Tab */}
             {tab === "stats" && (
                 <div className="p-6">
                     <h2 className="text-2xl font-bold mb-6">Library Statistics</h2>
@@ -319,7 +321,7 @@ export default function AdminPage() {
                         </div>
                     </div>
 
-                    {/* Список транзакций */}
+                    {/* Transactions */}
                     <h3 className="text-xl font-bold mb-4">Transactions</h3>
                     <div className="overflow-x-auto">
                         <table className="min-w-full border border-border-color">
@@ -335,16 +337,16 @@ export default function AdminPage() {
                             </thead>
                             <tbody>
                             {transactions
-                                .slice() // создаем копию, чтобы не мутировать state
-                                .sort((a, b) => new Date(b.borrowDate).getTime() - new Date(a.borrowDate).getTime()) // новые сверху
+                                .slice()
+                                .sort((a, b) => new Date(b.borrowDate).getTime() - new Date(a.borrowDate).getTime())
                                 .map(tx => (
                                     <tr key={tx.id}>
                                         <td className="px-4 py-2 border border-border-color">{tx.id}</td>
                                         <td className="px-4 py-2 border border-border-color">{tx.userId}</td>
                                         <td className="px-4 py-2 border border-border-color">{tx.bookId}</td>
                                         <td className="px-4 py-2 border border-border-color">{tx.borrowDate}</td>
-                                        <td className="px-4 py-2 border border-border-color">{tx.returnDate || "-"}</td>
-                                        <td className="px-4 py-2 border border-border-color">
+                                        <td className="px-4
+ py-2 border border-border-color">
                                             {tx.active ? "ACTIVE" : "RETURNED"}
                                         </td>
                                     </tr>

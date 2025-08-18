@@ -41,6 +41,7 @@ public class BookController {
         bookService.deleteBookById(id);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<BookDTO> updateBook(
             @PathVariable Long id,

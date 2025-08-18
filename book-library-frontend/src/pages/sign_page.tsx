@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function SignPage() {
     const router = useRouter();
     const [name, setName] = useState('');
@@ -11,10 +13,10 @@ export default function SignPage() {
     const [isSuccess, setIsSuccess] = useState(false);
 
     const handleRegister = async () => {
-        setResult(null); // Clear previous results
+        setResult(null);
         setIsSuccess(false);
         try {
-            const res = await axios.post(`http://localhost:8081/api/auth/register`, {
+            const res = await axios.post(`${API_URL}/api/auth/register`, {
                 name,
                 email,
                 password,

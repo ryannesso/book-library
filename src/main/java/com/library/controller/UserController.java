@@ -53,6 +53,8 @@ public class UserController {
         return userMapper.toDTO(user);
     }
 
+
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<UserDTO> updateUser(
             @PathVariable Long id,
@@ -121,6 +123,7 @@ public class UserController {
         return ResponseEntity.ok(userDTOs);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/stats")
     public ResponseEntity<?> getUserStats(@CookieValue(name = "jwt", required = false) String jwt) {
         if (jwt == null) {
