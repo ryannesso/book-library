@@ -48,7 +48,7 @@ public class BookService {
     }
 
     public List<Book> getBookByTitle(String title) {
-        return bookRepository.getByTitle(title);
+        return bookRepository.findByTitleContainingIgnoreCase(title);
     }
 
     public void deleteBookById(Long Id) {

@@ -37,6 +37,11 @@ export default function AdminPage() {
     const [books, setBooks] = useState<Book[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [stats, setStats] = useState({ bookCount: 0, userCount: 0, borrowCount: 0 });
+    const [filters, setFilters] = useState({
+        startDate: "",
+        endDate: "",
+        userId: "",
+    });
 
     const [modalOpen, setModalOpen] = useState(false);
     const [editBookMode, setEditBookMode] = useState(false);
@@ -108,9 +113,18 @@ export default function AdminPage() {
         setStats(res.data);
     };
 
-    const fetchTransactions = async () => {
+    const fetchTransactions = async (filterParams?: { startDate: string; endDate: string; userId: string }) => {
         try {
-            const res = await axios.get<Transaction[]>(`${API_URL}/api/transaction/transactions`, { withCredentials: true });
+            let url = `${API_URL}/api/transaction/transactions/filter`;
+            const params: any = {};
+            if (filterParams?.startDate) params.startDate = filterParams.startDate;
+            if (filterParams?.endDate) params.endDate = filterParams.endDate;
+            if (filterParams?.userId && filterParams.userId !== "") params.userId = Number(filterParams.userId); // Фикс для пустого userId
+
+            const res = await axios.get<Transaction[]>(url, {
+                withCredentials: true,
+                params: params,
+            });
             setTransactions(res.data);
         } catch (err) {
             console.error("Failed to fetch transactions", err);
@@ -197,9 +211,15 @@ export default function AdminPage() {
 
             {/* Tabs */}
             <div className="flex gap-6 p-6">
-                <button onClick={() => setTab("books")} className={tab === "books" ? "btn-primary" : "btn-secondary"}>Books</button>
-                <button onClick={() => setTab("users")} className={tab === "users" ? "btn-primary" : "btn-secondary"}>Users</button>
-                <button onClick={() => setTab("stats")} className={tab === "stats" ? "btn-primary" : "btn-secondary"}>Stats</button>
+                <button onClick={() => setTab("books")} className={tab === "books" ? "btn-primary" : "btn-secondary"}>
+                    Books
+                </button>
+                <button onClick={() => setTab("users")} className={tab === "users" ? "btn-primary" : "btn-secondary"}>
+                    Users
+                </button>
+                <button onClick={() => setTab("stats")} className={tab === "stats" ? "btn-primary" : "btn-secondary"}>
+                    Stats
+                </button>
             </div>
 
             {/* Books Tab */}
@@ -207,18 +227,24 @@ export default function AdminPage() {
                 <div className="p-6">
                     <div className="flex justify-between mb-4">
                         <h2 className="text-2xl font-bold">Manage Books</h2>
-                        <button onClick={openAddModal} className="btn-success px-4 py-2">+ Add Book</button>
+                        <button onClick={openAddModal} className="btn-success px-4 py-2">
+                            + Add Book
+                        </button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {books.map(book => (
+                        {books.map((book) => (
                             <div key={book.id} className="card-base p-6">
                                 <h3 className="text-xl font-bold">{book.title}</h3>
                                 <p className="text-text-muted">Author: {book.author}</p>
                                 <p className="text-text-muted">Price: ${book.price}</p>
                                 <p className="text-text-muted">Copies: {book.availableCopies}</p>
                                 <div className="flex gap-2 mt-4">
-                                    <button onClick={() => openEditModal(book)} className="btn-primary px-4 py-2">Edit</button>
-                                    <button onClick={() => deleteBook(book.id)} className="btn-danger px-4 py-2">Delete</button>
+                                    <button onClick={() => openEditModal(book)} className="btn-primary px-4 py-2">
+                                        Edit
+                                    </button>
+                                    <button onClick={() => deleteBook(book.id)} className="btn-danger px-4 py-2">
+                                        Delete
+                                    </button>
                                 </div>
                             </div>
                         ))}
@@ -231,10 +257,12 @@ export default function AdminPage() {
                 <div className="p-6">
                     <div className="flex justify-between mb-4">
                         <h2 className="text-2xl font-bold">Manage Users</h2>
-                        <button onClick={openAddModalUser} className="btn-success px-4 py-2">+ Add User</button>
+                        <button onClick={openAddModalUser} className="btn-success px-4 py-2">
+                            + Add User
+                        </button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {users.map(user => (
+                        {users.map((user) => (
                             <div key={user.id} className="card-base p-6">
                                 <p className="text-text-muted">ID: {user.id}</p>
                                 <h3 className="text-xl">{user.name}</h3>
@@ -243,7 +271,9 @@ export default function AdminPage() {
                                 <p className="text-text-muted">Credits: {user.credits}</p>
                                 <p className="text-text-muted">Role: {user.role}</p>
                                 <div className="flex gap-2 mt-4">
-                                    <button onClick={() => openEditModalUser(user)} className="btn-primary px-4 py-2">Edit</button>
+                                    <button onClick={() => openEditModalUser(user)} className="btn-primary px-4 py-2">
+                                        Edit
+                                    </button>
                                 </div>
                             </div>
                         ))}
@@ -260,14 +290,14 @@ export default function AdminPage() {
                             type="text"
                             placeholder="Name"
                             value={currentUser.name || ""}
-                            onChange={e => setCurrentUser({ ...currentUser, name: e.target.value })}
+                            onChange={(e) => setCurrentUser({ ...currentUser, name: e.target.value })}
                             className="w-full mb-2 px-3 py-2 bg-background-primary border border-border-color text-text-light"
                         />
                         <input
                             type="email"
                             placeholder="Email"
                             value={currentUser.email || ""}
-                            onChange={e => setCurrentUser({ ...currentUser, email: e.target.value })}
+                            onChange={(e) => setCurrentUser({ ...currentUser, email: e.target.value })}
                             className="w-full mb-2 px-3 py-2 bg-background-primary border border-border-color text-text-light"
                         />
                         {!editUserMode && (
@@ -275,7 +305,7 @@ export default function AdminPage() {
                                 type="password"
                                 placeholder="Password"
                                 value={currentPassword}
-                                onChange={e => setCurrentPassword(e.target.value)}
+                                onChange={(e) => setCurrentPassword(e.target.value)}
                                 className="w-full mb-2 px-3 py-2 bg-background-primary border border-border-color text-text-light"
                             />
                         )}
@@ -283,20 +313,24 @@ export default function AdminPage() {
                             type="number"
                             placeholder="Credits"
                             value={currentUser.credits ?? 0}
-                            onChange={e => setCurrentUser({ ...currentUser, credits: Number(e.target.value) })}
+                            onChange={(e) => setCurrentUser({ ...currentUser, credits: Number(e.target.value) })}
                             className="w-full mb-2 px-3 py-2 bg-background-primary border border-border-color text-text-light"
                         />
                         <select
                             value={currentUser.role || "USER"}
-                            onChange={e => setCurrentUser({ ...currentUser, role: e.target.value })}
+                            onChange={(e) => setCurrentUser({ ...currentUser, role: e.target.value })}
                             className="w-full mb-4 px-3 py-2 bg-background-primary border border-border-color text-text-light"
                         >
                             <option value="USER">USER</option>
                             <option value="ADMIN">ADMIN</option>
                         </select>
                         <div className="flex justify-end gap-2">
-                            <button onClick={() => setUserModalOpen(false)} className="btn-secondary px-4 py-2">Cancel</button>
-                            <button onClick={saveUser} className="btn-success px-4 py-2">Save</button>
+                            <button onClick={() => setUserModalOpen(false)} className="btn-secondary px-4 py-2">
+                                Cancel
+                            </button>
+                            <button onClick={saveUser} className="btn-success px-4 py-2">
+                                Save
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -324,6 +358,44 @@ export default function AdminPage() {
                     {/* Transactions */}
                     <h3 className="text-xl font-bold mb-4">Transactions</h3>
                     <div className="overflow-x-auto">
+                        <div className="mb-4 flex gap-4 flex-wrap">
+                            <input
+                                type="datetime-local"
+                                placeholder="Start Date"
+                                value={filters.startDate}
+                                onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+                                className="px-3 py-2 bg-background-primary border border-border-color text-text-light"
+                            />
+                            <input
+                                type="datetime-local"
+                                placeholder="End Date"
+                                value={filters.endDate}
+                                onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+                                className="px-3 py-2 bg-background-primary border border-border-color text-text-light"
+                            />
+                            <input
+                                type="number"
+                                placeholder="User ID"
+                                value={filters.userId}
+                                onChange={(e) => setFilters({ ...filters, userId: e.target.value })}
+                                className="px-3 py-2 bg-background-primary border border-border-color text-text-light"
+                            />
+                            <button
+                                onClick={() => fetchTransactions(filters)}
+                                className="btn-primary px-4 py-2"
+                            >
+                                Apply Filters
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setFilters({ startDate: "", endDate: "", userId: "" });
+                                    fetchTransactions();
+                                }}
+                                className="btn-secondary px-4 py-2"
+                            >
+                                Clear
+                            </button>
+                        </div>
                         <table className="min-w-full border border-border-color">
                             <thead>
                             <tr className="bg-background-secondary">
@@ -339,15 +411,15 @@ export default function AdminPage() {
                             {transactions
                                 .slice()
                                 .sort((a, b) => new Date(b.borrowDate).getTime() - new Date(a.borrowDate).getTime())
-                                .map(tx => (
+                                .map((tx) => (
                                     <tr key={tx.id}>
                                         <td className="px-4 py-2 border border-border-color">{tx.id}</td>
                                         <td className="px-4 py-2 border border-border-color">{tx.userId}</td>
                                         <td className="px-4 py-2 border border-border-color">{tx.bookId}</td>
                                         <td className="px-4 py-2 border border-border-color">{tx.borrowDate}</td>
-                                        <td className="px-4
- py-2 border border-border-color">
-                                            {tx.active ? "ACTIVE" : "RETURNED"}
+                                        <td className="px-4 py-2 border border-border-color">{tx.returnDate}</td>
+                                        <td className="px-4 py-2 border border-border-color">
+                                            {tx.active === "ACTIVE" ? "ACTIVE" : "RETURNED"}
                                         </td>
                                     </tr>
                                 ))}
@@ -356,7 +428,6 @@ export default function AdminPage() {
                     </div>
                 </div>
             )}
-
 
             {/* Book Modal */}
             {modalOpen && (
@@ -367,39 +438,43 @@ export default function AdminPage() {
                             type="text"
                             placeholder="Title"
                             value={currentBook.title || ""}
-                            onChange={e => setCurrentBook({ ...currentBook, title: e.target.value })}
+                            onChange={(e) => setCurrentBook({ ...currentBook, title: e.target.value })}
                             className="w-full mb-2 px-3 py-2 bg-background-primary border border-border-color text-text-light"
                         />
                         <input
                             type="text"
                             placeholder="Author"
                             value={currentBook.author || ""}
-                            onChange={e => setCurrentBook({ ...currentBook, author: e.target.value })}
+                            onChange={(e) => setCurrentBook({ ...currentBook, author: e.target.value })}
                             className="w-full mb-2 px-3 py-2 bg-background-primary border border-border-color text-text-light"
                         />
                         <textarea
                             placeholder="Description"
                             value={currentBook.description || ""}
-                            onChange={e => setCurrentBook({ ...currentBook, description: e.target.value })}
+                            onChange={(e) => setCurrentBook({ ...currentBook, description: e.target.value })}
                             className="w-full mb-2 px-3 py-2 bg-background-primary border border-border-color text-text-light"
                         />
                         <input
                             type="number"
                             placeholder="Price"
                             value={currentBook.price || ""}
-                            onChange={e => setCurrentBook({ ...currentBook, price: Number(e.target.value) })}
+                            onChange={(e) => setCurrentBook({ ...currentBook, price: Number(e.target.value) })}
                             className="w-full mb-2 px-3 py-2 bg-background-primary border border-border-color text-text-light"
                         />
                         <input
                             type="number"
                             placeholder="Copies"
                             value={currentBook.availableCopies || ""}
-                            onChange={e => setCurrentBook({ ...currentBook, availableCopies: Number(e.target.value) })}
+                            onChange={(e) => setCurrentBook({ ...currentBook, availableCopies: Number(e.target.value) })}
                             className="w-full mb-4 px-3 py-2 bg-background-primary border border-border-color text-text-light"
                         />
                         <div className="flex justify-end gap-2">
-                            <button onClick={() => setModalOpen(false)} className="btn-secondary px-4 py-2">Cancel</button>
-                            <button onClick={saveBook} className="btn-success px-4 py-2">Save</button>
+                            <button onClick={() => setModalOpen(false)} className="btn-secondary px-4 py-2">
+                                Cancel
+                            </button>
+                            <button onClick={saveBook} className="btn-success px-4 py-2">
+                                Save
+                            </button>
                         </div>
                     </div>
                 </div>

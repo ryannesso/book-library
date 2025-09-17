@@ -9,9 +9,11 @@ import com.library.entity.Transaction;
 import com.library.repository.TransactionRepository;
 import com.library.service.TransactionService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -63,10 +65,29 @@ public class TransactionController {
 //        return transactionService.addTransaction(transaction);
 //    }
 
-    @GetMapping("/transactions")
-    public ResponseEntity<List<Transaction>> getAllTransactions() {
-        return ResponseEntity.ok().body(transactionRepository.findAll());
+    @GetMapping("/transactions/filter")
+    public ResponseEntity<List<Transaction>> filterTransactions(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @RequestParam(required = false) Long userId) {
+        List<Transaction> filtered;
+        if (startDate != null && endDate != null && userId != null) {
+            // Полная фильтрация
+            filtered = transactionRepository.findByBorrowDateBetweenAndUserId(startDate, endDate, userId);
+        } else if (startDate != null && endDate != null) {
+            // Только по дате
+            filtered = transactionRepository.findByBorrowDateBetween(startDate, endDate);
+        } else if (userId != null) {
+            // Только по userId (используй findByUserId, если добавишь в репозиторий)
+            filtered = transactionRepository.findByUserId(userId);  // Добавь этот метод в репозиторий, если нет
+        } else {
+            // Все транзакции
+            filtered = transactionRepository.findAll();
+        }
+        return ResponseEntity.ok(filtered);
     }
+
+
 
 
 

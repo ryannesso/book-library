@@ -14,11 +14,10 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "book_user", "-pbook_pass123!"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "mysql-library", "-u", "book_user", "-pbook_pass123!"]
       interval: 5s
       timeout: 5s
       retries: 10
-
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
@@ -61,11 +60,10 @@ services:
     networks:
       - app-network
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/library_db
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-library:3306/library_db
       SPRING_DATASOURCE_USERNAME: book_user
       SPRING_DATASOURCE_PASSWORD: book_pass123!
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-
 
   frontend:
     build: ./book-library-frontend
@@ -78,7 +76,6 @@ services:
       - backend
     networks:
       - app-network
-
 
 networks:
   app-network:

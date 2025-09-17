@@ -13,8 +13,8 @@ public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private LocalDateTime BorrowDate;
-    private LocalDateTime ReturnDate;
+    private LocalDateTime borrowDate;
+    private LocalDateTime returnDate;
 
     @Enumerated(EnumType.STRING)
     private ActionType actionType;
