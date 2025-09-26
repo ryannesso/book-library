@@ -159,7 +159,7 @@ export default function Page() {
                             onClick={() => router.push("/profile")}
                             className="text-text-light hover:text-accent-primary px-3 py-2 rounded-md transition-colors text-lg"
                         >
-                            My Books
+                            My Profile
                         </button>
                     )}
 

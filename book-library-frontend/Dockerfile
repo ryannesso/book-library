@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 RUN npm install
-
+RUN npm install @stripe/stripe-js @stripe/react-stripe-js
 # Копируем весь проект (src, public, tsconfig и т.д.)
 COPY . .
 

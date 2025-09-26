@@ -143,6 +143,12 @@
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.stripe</groupId>
+            <artifactId>stripe-java</artifactId>
+            <version>25.4.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>

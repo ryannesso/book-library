@@ -42,7 +42,6 @@ public class UserService {
         }
         String encodedPassword = passwordEncoder.encode(userDTO.password());
         user.setPassword(encodedPassword);
-        user.setCredits(1000);
         return userRepository.save(user);
     }
 
